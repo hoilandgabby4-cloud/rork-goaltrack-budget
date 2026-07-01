@@ -23,33 +23,34 @@ class BudgetRepository(context: Context) {
     }
 
     private fun seed(): BudgetData {
+        // Seed default categories totaling 100% of income
         val now = System.currentTimeMillis()
         val day = 86_400_000L
 
         val checking = Account(uuid(), "Everyday Checking", AccountType.CHECKING, 2840.0, AccentPalette[1].toArgb().toLong())
-        val savings = Account(uuid(), "Emergency Fund", AccountType.SAVINGS, 6200.0, AccentPalette[0].toArgb().toLong())
+        val savingsAcct = Account(uuid(), "Emergency Fund", AccountType.SAVINGS, 6200.0, AccentPalette[0].toArgb().toLong())
         val visa = Account(uuid(), "Visa Platinum", AccountType.CREDIT, 640.0, AccentPalette[3].toArgb().toLong(), creditLimit = 5000.0)
         val cash = Account(uuid(), "Cash Wallet", AccountType.CASH, 120.0, AccentPalette[2].toArgb().toLong())
         val retirement = Account(uuid(), "Vanguard 401k", AccountType.RETIREMENT, 42500.0, AccentPalette[7].toArgb().toLong())
 
-        val groceries = Category(uuid(), "Groceries", "cart", AccentPalette[0].toArgb().toLong(), 500.0, 12.0)
-        val dining = Category(uuid(), "Dining", "food", AccentPalette[7].toArgb().toLong(), 250.0, 8.0)
-        val transport = Category(uuid(), "Transport", "car", AccentPalette[1].toArgb().toLong(), 180.0, 10.0)
-        val bills = Category(uuid(), "Bills", "bolt", AccentPalette[4].toArgb().toLong(), 600.0, 30.0)
-        val fun_ = Category(uuid(), "Fun", "movie", AccentPalette[5].toArgb().toLong(), 200.0, 5.0)
-        val shopping = Category(uuid(), "Shopping", "shopping", AccentPalette[6].toArgb().toLong(), 300.0, 10.0)
-        val housing = Category(uuid(), "Housing", "house", AccentPalette[2].toArgb().toLong(), 1200.0, 28.0)
+        // Suggested percentages add up to 100% of income
+        val housing = Category(uuid(), "Housing", "house", AccentPalette[2].toArgb().toLong(), 960.0, 30.0)
+        val bills = Category(uuid(), "Monthly Bills", "bolt", AccentPalette[4].toArgb().toLong(), 640.0, 20.0)
+        val car = Category(uuid(), "Car", "car", AccentPalette[1].toArgb().toLong(), 640.0, 20.0)
+        val groceries = Category(uuid(), "Groceries", "cart", AccentPalette[0].toArgb().toLong(), 320.0, 10.0)
+        val shopping = Category(uuid(), "Shopping", "shopping", AccentPalette[6].toArgb().toLong(), 320.0, 10.0)
+        val savingsCat = Category(uuid(), "Savings", "savings", AccentPalette[5].toArgb().toLong(), 320.0, 10.0)
 
         val tx = listOf(
             Transaction(uuid(), "Whole Foods", 64.20, checking.id, groceries.id, false, now - day / 4),
-            Transaction(uuid(), "Blue Bottle Coffee", 5.75, cash.id, dining.id, false, now - day / 2),
-            Transaction(uuid(), "Uber", 18.40, visa.id, transport.id, false, now - day),
-            Transaction(uuid(), "Electric Bill", 92.10, checking.id, bills.id, false, now - day * 2),
-            Transaction(uuid(), "Cinema Night", 32.00, visa.id, fun_.id, false, now - day * 2),
+            Transaction(uuid(), "Shell Gas", 48.50, visa.id, car.id, false, now - day / 2),
+            Transaction(uuid(), "Electric Bill", 92.10, checking.id, bills.id, false, now - day),
+            Transaction(uuid(), "Internet Bill", 79.99, visa.id, bills.id, false, now - day * 2),
             Transaction(uuid(), "Paycheck", 3200.00, checking.id, null, true, now - day * 3),
             Transaction(uuid(), "Nike Store", 119.99, visa.id, shopping.id, false, now - day * 4),
             Transaction(uuid(), "Trader Joe's", 47.85, checking.id, groceries.id, false, now - day * 5),
             Transaction(uuid(), "Rent", 1200.00, checking.id, housing.id, false, now - day * 6),
+            Transaction(uuid(), "Auto Transfer", 300.00, savingsAcct.id, savingsCat.id, false, now - day * 7),
         )
 
         val goals = listOf(
@@ -75,8 +76,8 @@ class BudgetRepository(context: Context) {
         )
 
         return BudgetData(
-            accounts = listOf(checking, savings, visa, cash, retirement),
-            categories = listOf(groceries, dining, transport, bills, fun_, shopping, housing),
+            accounts = listOf(checking, savingsAcct, visa, cash, retirement),
+            categories = listOf(housing, bills, car, groceries, shopping, savingsCat),
             transactions = tx,
             goals = goals,
             debts = debts,

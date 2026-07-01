@@ -126,7 +126,11 @@ fun MainScaffold() {
                     onAddCategory = { sheet = ActiveSheet.AddCategory },
                     onEditCategory = { sheet = ActiveSheet.EditCategory(it) },
                 )
-                Tab.TRENDS -> TrendsScreen(vm = vm)
+                Tab.TRENDS -> TrendsScreen(
+                    vm = vm,
+                    onAddCategory = { sheet = ActiveSheet.AddCategory },
+                    onEditCategory = { sheet = ActiveSheet.EditCategory(it) },
+                )
                 Tab.ACTIVITY -> ActivityScreen(vm = vm)
                 Tab.GOALS -> GoalsScreen(
                     vm = vm,

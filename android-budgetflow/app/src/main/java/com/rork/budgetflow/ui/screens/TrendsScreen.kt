@@ -21,6 +21,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -29,6 +33,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -40,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rork.budgetflow.data.Category
+import com.rork.budgetflow.data.GuidelineRow
+import com.rork.budgetflow.data.IconCatalog
 import com.rork.budgetflow.data.Money
 import com.rork.budgetflow.data.toColor
 import com.rork.budgetflow.ui.BudgetViewModel
@@ -50,13 +57,16 @@ import com.rork.budgetflow.ui.components.PieSlice
 import com.rork.budgetflow.ui.components.ProgressBar
 import com.rork.budgetflow.ui.components.SectionHeader
 import com.rork.budgetflow.ui.components.SpendingPieChart
+import com.rork.budgetflow.ui.components.androidClick
 import com.rork.budgetflow.ui.theme.Coral
+import com.rork.budgetflow.ui.theme.Gold
 import com.rork.budgetflow.ui.theme.Hairline
 import com.rork.budgetflow.ui.theme.Ink
 import com.rork.budgetflow.ui.theme.InkElevated
 import com.rork.budgetflow.ui.theme.InkSurface
 import com.rork.budgetflow.ui.theme.Mint
 import com.rork.budgetflow.ui.theme.MintBright
+import com.rork.budgetflow.ui.theme.OnMint
 import com.rork.budgetflow.ui.theme.TextSecondary
 import com.rork.budgetflow.ui.theme.TextTertiary
 
@@ -67,12 +77,17 @@ private enum class TrendTab(val label: String) {
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun TrendsScreen(vm: BudgetViewModel) {
+fun TrendsScreen(
+    vm: BudgetViewModel,
+    onAddCategory: () -> Unit = {},
+    onEditCategory: (Category) -> Unit = {},
+) {
     val data by vm.data.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { TrendTab.entries.size })
     val scope = rememberCoroutineScope()
     val months = vm.monthlyBreakdown()
-    val spentByCat = vm.spentByCategory()
+    val spentByCat = remember(data) { vm.spentByCategory(data) }
+    val guidelines = remember(data) { vm.spendingGuidelines(data) }
 
     // Tabs are swipeable and tappable
 
@@ -143,6 +158,9 @@ fun TrendsScreen(vm: BudgetViewModel) {
                 TrendTab.BUDGET -> CategoriesTab(
                     spentByCat = spentByCat,
                     categories = data.categories,
+                    guidelines = guidelines,
+                    onEditCategory = onEditCategory,
+                    onAddCategory = onAddCategory,
                 )
                 TrendTab.MONTHLY -> MonthlyTab(months = months)
             }
@@ -226,6 +244,9 @@ private fun TrendSummaryCard(
 private fun CategoriesTab(
     spentByCat: List<Pair<Category, Double>>,
     categories: List<Category>,
+    guidelines: List<GuidelineRow>,
+    onEditCategory: (Category) -> Unit,
+    onAddCategory: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -248,83 +269,217 @@ private fun CategoriesTab(
             }
         }
 
-        // Budget progress list
-        val withBudget = categories.filter { it.monthlyBudget > 0.0 }
-        if (withBudget.isNotEmpty()) {
+        // Spending guidelines — suggested vs actual %
+        if (guidelines.isNotEmpty()) {
             item {
-                SectionHeader(title = "Budget progress")
+                SectionHeader(title = "Spending guidelines")
             }
-            items(withBudget) { cat ->
-                BudgetRow(
-                    name = cat.name,
-                    iconKey = cat.iconKey,
-                    color = cat.colorArgb.toColor(),
-                    used = spentByCat.firstOrNull { it.first.id == cat.id }?.second ?: 0.0,
-                    budget = cat.monthlyBudget,
-                    suggestedPct = cat.suggestedPercentage,
-                )
+            item {
+                BudgetGuidelinesCard(guidelines = guidelines)
+            }
+        }
+
+        // Budget categories — editable list
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SectionHeader(title = "Your categories", modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Mint.copy(alpha = 0.12f))
+                        .androidClick(onAddCategory),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Add,
+                        contentDescription = "Add category",
+                        tint = Mint,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
+
+        items(categories.size) { index ->
+            val cat = categories[index]
+            CategoryBudgetCard(
+                category = cat,
+                spent = spentByCat.firstOrNull { it.first.id == cat.id }?.second ?: 0.0,
+                onEdit = { onEditCategory(cat) },
+            )
+        }
+    }
+}
+
+/**
+ * Spending guidelines card showing suggested vs actual percentage per category.
+ * Compact, integrated into the Budget tab — no separate panel.
+ */
+@Composable
+private fun BudgetGuidelinesCard(guidelines: List<GuidelineRow>) {
+    GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 20.dp) {
+        Column(Modifier.padding(16.dp)) {
+            guidelines.forEachIndexed { index, row ->
+                val catColor = row.category.colorArgb.toColor()
+                val isOver = row.actualPct > row.suggestedPct
+                val suggestedWidth = (row.suggestedPct / 100.0).toFloat().coerceIn(0f, 1f)
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(catColor)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        row.category.name,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "${row.suggestedPct.toInt()}% → ${row.actualPct.toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isOver) Coral else Mint,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                // Bar: track shows suggested %, fill shows actual %
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Hairline),
+                ) {
+                    // Suggested marker (subtle line)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(suggestedWidth.coerceAtLeast(0.01f))
+                            .height(6.dp)
+                            .background(catColor.copy(alpha = 0.25f)),
+                    )
+                    // Actual fill
+                    val actualRatio = ((row.actualPct / row.suggestedPct.coerceAtLeast(1.0)).toFloat()).coerceIn(0f, 1.5f)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth((actualRatio * suggestedWidth).coerceAtMost(1f))
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(catColor.copy(alpha = 0.7f), if (isOver) Coral else catColor)
+                                )
+                            ),
+                    )
+                }
+                if (index < guidelines.lastIndex) {
+                    Spacer(Modifier.height(12.dp))
+                }
             }
         }
     }
 }
 
+/**
+ * Category budget card with edit affordance. Shows the category name,
+ * icon, monthly budget, suggested percentage, and spending progress.
+ */
 @Composable
-private fun BudgetRow(
-    name: String,
-    iconKey: String,
-    color: Color,
-    used: Double,
-    budget: Double,
-    suggestedPct: Double = 0.0,
+private fun CategoryBudgetCard(
+    category: Category,
+    spent: Double,
+    onEdit: () -> Unit,
 ) {
-    val ratio = (used / budget).toFloat().coerceIn(0f, 1f)
-    val over = used > budget
-    GlassCard(cornerRadius = 20.dp, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.16f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.Icon(
-                    com.rork.budgetflow.data.IconCatalog.icon(iconKey),
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+    val color = category.colorArgb.toColor()
+    val hasBudget = category.monthlyBudget > 0.0
+    val ratio = if (hasBudget) (spent / category.monthlyBudget).toFloat().coerceIn(0f, 1.5f) else 0f
+    val isOver = spent > category.monthlyBudget && hasBudget
+
+    GlassCard(
+        cornerRadius = 20.dp,
+        modifier = Modifier.fillMaxWidth().androidClick(onEdit),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        IconCatalog.icon(category.iconKey),
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        name,
+                        category.name,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Row {
+                        if (hasBudget) {
+                            Text(
+                                "Budget " + Money.formatCompact(category.monthlyBudget),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary,
+                            )
+                        }
+                        if (category.suggestedPercentage > 0) {
+                            if (hasBudget) {
+                                Text(
+                                    " · ",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TextTertiary,
+                                )
+                            }
+                            Text(
+                                "${category.suggestedPercentage.toInt()}% suggested",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Mint,
+                            )
+                        }
+                    }
+                }
+                Icon(
+                    Icons.Rounded.Edit,
+                    contentDescription = "Edit",
+                    tint = TextTertiary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+
+            if (hasBudget) {
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Spent " + Money.formatCompact(spent),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isOver) Coral else TextSecondary,
                         modifier = Modifier.weight(1f),
                     )
-                    Text(
-                        Money.format(used) + " / " + Money.formatCompact(budget),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (over) Coral else TextSecondary,
-                    )
+                    if (isOver) {
+                        Text(
+                            "Over budget",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Coral,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
-                Spacer(Modifier.height(4.dp))
-                if (suggestedPct > 0) {
-                    Text(
-                        "Suggested: ${suggestedPct.toInt()}% of income",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextTertiary,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                }
+                Spacer(Modifier.height(6.dp))
                 ProgressBar(
-                    progress = ratio,
-                    color = if (over) Coral else color,
+                    progress = ratio.coerceIn(0f, 1f),
+                    color = if (isOver) Coral else color,
                     modifier = Modifier.fillMaxWidth(),
                     height = 7.dp,
                 )

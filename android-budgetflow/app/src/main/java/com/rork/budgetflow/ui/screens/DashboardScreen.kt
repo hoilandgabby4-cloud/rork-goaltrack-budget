@@ -53,7 +53,6 @@ import com.rork.budgetflow.ui.components.IconChip
 import com.rork.budgetflow.ui.components.PieSlice
 import com.rork.budgetflow.ui.components.ProgressBar
 import com.rork.budgetflow.ui.components.SectionHeader
-import com.rork.budgetflow.ui.components.SpendingGuidelines
 import com.rork.budgetflow.ui.components.SpendingPieChart
 import com.rork.budgetflow.ui.theme.Coral
 import com.rork.budgetflow.ui.theme.Gold
@@ -84,8 +83,7 @@ fun DashboardScreen(
 
     val health = remember(data) { vm.financialHealth(data) }
     val spentByCat = remember(data) { vm.spentByCategory(data) }
-    val guidelines = remember(data) { vm.spendingGuidelines(data) }
-    val totalSuggestedPct = remember(data) { vm.totalSuggestedPct(data) }
+
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -141,19 +139,6 @@ fun DashboardScreen(
                         .clip(RoundedCornerShape(24.dp))
                         .background(InkElevated)
                         .padding(20.dp),
-                )
-            }
-        }
-
-        // Spending guidelines — suggested vs actual %
-        if (guidelines.isNotEmpty()) {
-            item {
-                SectionHeader(title = "Spending guidelines")
-            }
-            item {
-                SpendingGuidelines(
-                    rows = guidelines,
-                    totalSuggestedPct = totalSuggestedPct,
                 )
             }
         }
