@@ -38,6 +38,7 @@ class BudgetRepository(context: Context) {
         val bills = Category(uuid(), "Bills", "bolt", AccentPalette[4].toArgb().toLong(), 600.0, 30.0)
         val fun_ = Category(uuid(), "Fun", "movie", AccentPalette[5].toArgb().toLong(), 200.0, 5.0)
         val shopping = Category(uuid(), "Shopping", "shopping", AccentPalette[6].toArgb().toLong(), 300.0, 10.0)
+        val housing = Category(uuid(), "Housing", "house", AccentPalette[2].toArgb().toLong(), 1200.0, 28.0)
 
         val tx = listOf(
             Transaction(uuid(), "Whole Foods", 64.20, checking.id, groceries.id, false, now - day / 4),
@@ -48,6 +49,7 @@ class BudgetRepository(context: Context) {
             Transaction(uuid(), "Paycheck", 3200.00, checking.id, null, true, now - day * 3),
             Transaction(uuid(), "Nike Store", 119.99, visa.id, shopping.id, false, now - day * 4),
             Transaction(uuid(), "Trader Joe's", 47.85, checking.id, groceries.id, false, now - day * 5),
+            Transaction(uuid(), "Rent", 1200.00, checking.id, housing.id, false, now - day * 6),
         )
 
         val goals = listOf(
@@ -74,7 +76,7 @@ class BudgetRepository(context: Context) {
 
         return BudgetData(
             accounts = listOf(checking, savings, visa, cash, retirement),
-            categories = listOf(groceries, dining, transport, bills, fun_, shopping),
+            categories = listOf(groceries, dining, transport, bills, fun_, shopping, housing),
             transactions = tx,
             goals = goals,
             debts = debts,

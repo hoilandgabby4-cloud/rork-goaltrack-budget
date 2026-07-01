@@ -421,9 +421,22 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Auto-create Children and Pets categories when household counts go from 0 to >0. */
+    /** Auto-create Housing, Children and Pets categories when household counts go from 0 to >0. */
     private fun autoCreateDependentCategories(d: BudgetData, hh: HouseholdProfile): List<Category> {
         val extraCats = mutableListOf<Category>()
+        // Always create Housing if missing — it's a fundamental budget category
+        if (d.categories.none { it.name.equals("Housing", ignoreCase = true) }) {
+            extraCats.add(
+                Category(
+                    id = uuid(),
+                    name = "Housing",
+                    iconKey = "house",
+                    colorArgb = 0xFFF5C451,
+                    monthlyBudget = hh.monthlyIncome * 0.28,
+                    suggestedPercentage = 28.0,
+                )
+            )
+        }
         if (hh.childCount > 0) {
             val existing = d.categories.any { it.name.equals("Children", ignoreCase = true) }
             if (!existing) {
@@ -524,6 +537,10 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
             name.contains("transport") || name.contains("car") || name.contains("gas") -> {
                 // Transport scales modestly
                 (base + (hh.adultCount - 1).coerceAtLeast(0) * 2.0).coerceAtMost(18.0)
+            }
+            name.contains("housing") || name.contains("rent") || name.contains("mortgage") -> {
+                // Housing scales with adults (roommate/partner dynamics) but capped at 35%
+                (base + (hh.adultCount - 1).coerceAtLeast(0) * 4.0).coerceAtMost(35.0)
             }
             else -> base
         }
