@@ -82,6 +82,7 @@ private sealed interface ActiveSheet {
     data class PayDebt(val debtId: String) : ActiveSheet
     data object Vehicle : ActiveSheet
     data object BuyingPower : ActiveSheet
+    data object EditHousehold : ActiveSheet
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,6 +118,7 @@ fun MainScaffold() {
                     onSeeAccounts = { tab = Tab.ACCOUNTS },
                     onSeeActivity = { tab = Tab.ACTIVITY },
                     onAdd = { sheet = ActiveSheet.Transaction },
+                    onEditHousehold = { sheet = ActiveSheet.EditHousehold },
                 )
                 Tab.ACCOUNTS -> AccountsScreen(
                     vm = vm,
@@ -183,6 +185,7 @@ fun MainScaffold() {
                 )
                 ActiveSheet.Vehicle -> AddVehicleSheet(vm, close)
                 ActiveSheet.BuyingPower -> AddBuyingPowerSheet(vm, close)
+                ActiveSheet.EditHousehold -> EditHouseholdSheet(vm, close)
             }
         }
     }

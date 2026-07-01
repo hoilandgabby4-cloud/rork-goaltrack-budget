@@ -397,40 +397,63 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
                 petCount = profile.petCount,
                 monthlyIncome = if (profile.monthlyIncome > 0) profile.monthlyIncome else d.household.monthlyIncome,
             )
-            // Auto-create child and pet categories if the user has dependents
-            val extraCats = mutableListOf<Category>()
-            if (hh.childCount > 0) {
-                val existing = d.categories.any { it.name.equals("Children", ignoreCase = true) }
-                if (!existing) {
-                    extraCats.add(
-                        Category(
-                            id = BudgetRepository.uuid(),
-                            name = "Children",
-                            iconKey = "child",
-                            colorArgb = 0xFFF5C451,
-                            monthlyBudget = hh.monthlyIncome * 0.08,
-                            suggestedPercentage = 8.0,
-                        )
-                    )
-                }
-            }
-            if (hh.petCount > 0) {
-                val existing = d.categories.any { it.name.equals("Pets", ignoreCase = true) }
-                if (!existing) {
-                    extraCats.add(
-                        Category(
-                            id = BudgetRepository.uuid(),
-                            name = "Pets",
-                            iconKey = "pets",
-                            colorArgb = 0xFF5EC2FF,
-                            monthlyBudget = hh.petCount * hh.monthlyIncome * 0.025,
-                            suggestedPercentage = hh.petCount * 2.5,
-                        )
-                    )
-                }
-            }
+            val extraCats = autoCreateDependentCategories(d, hh)
             d.copy(household = hh, categories = d.categories + extraCats, onboarded = true)
         }
+    }
+
+    /**
+     * Updates the household profile after onboarding — for when family members
+     * or pets are added or leave. Also auto-creates dependent categories when
+     * the count changes from 0 to >0.
+     */
+    fun updateHousehold(profile: HouseholdProfile) {
+        update { d ->
+            val hh = d.household.copy(
+                adultCount = profile.adultCount,
+                childCount = profile.childCount,
+                petCount = profile.petCount,
+                monthlyIncome = if (profile.monthlyIncome > 0) profile.monthlyIncome else d.household.monthlyIncome,
+            )
+            val extraCats = autoCreateDependentCategories(d, hh)
+            d.copy(household = hh, categories = d.categories + extraCats)
+        }
+    }
+
+    /** Auto-create Children and Pets categories when household counts go from 0 to >0. */
+    private fun autoCreateDependentCategories(d: BudgetData, hh: HouseholdProfile): List<Category> {
+        val extraCats = mutableListOf<Category>()
+        if (hh.childCount > 0) {
+            val existing = d.categories.any { it.name.equals("Children", ignoreCase = true) }
+            if (!existing) {
+                extraCats.add(
+                    Category(
+                        id = BudgetRepository.uuid(),
+                        name = "Children",
+                        iconKey = "child",
+                        colorArgb = 0xFFF5C451,
+                        monthlyBudget = hh.monthlyIncome * 0.08,
+                        suggestedPercentage = 8.0,
+                    )
+                )
+            }
+        }
+        if (hh.petCount > 0) {
+            val existing = d.categories.any { it.name.equals("Pets", ignoreCase = true) }
+            if (!existing) {
+                extraCats.add(
+                    Category(
+                        id = BudgetRepository.uuid(),
+                        name = "Pets",
+                        iconKey = "pets",
+                        colorArgb = 0xFF5EC2FF,
+                        monthlyBudget = hh.petCount * hh.monthlyIncome * 0.025,
+                        suggestedPercentage = hh.petCount * 2.5,
+                    )
+                )
+            }
+        }
+        return extraCats
     }
 
     // --- Spending guidelines -------------------------------------------------

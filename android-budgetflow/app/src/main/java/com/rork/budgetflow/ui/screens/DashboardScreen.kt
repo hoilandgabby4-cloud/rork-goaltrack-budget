@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rork.budgetflow.data.Account
 import com.rork.budgetflow.data.AccountType
 import com.rork.budgetflow.data.Dates
+import com.rork.budgetflow.data.HouseholdProfile
 import com.rork.budgetflow.data.IconCatalog
 import com.rork.budgetflow.data.Money
 import com.rork.budgetflow.data.toColor
@@ -70,6 +73,7 @@ fun DashboardScreen(
     onSeeAccounts: () -> Unit,
     onSeeActivity: () -> Unit,
     onAdd: () -> Unit,
+    onEditHousehold: () -> Unit = {},
 ) {
     val data by vm.data.collectAsStateWithLifecycle()
     val net = vm.netWorth()
@@ -91,6 +95,15 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Header() }
+
+        // Household summary card
+        item {
+            HouseholdCard(
+                household = data.household,
+                onEdit = onEditHousehold,
+            )
+        }
+
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FlowStat(
@@ -227,6 +240,63 @@ private fun Header() {
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Rounded.TrendingUp, contentDescription = null, tint = Ink)
+        }
+    }
+}
+
+@Composable
+private fun HouseholdCard(
+    household: HouseholdProfile,
+    onEdit: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(InkElevated)
+            .androidClick(onEdit)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(Mint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Rounded.People,
+                    contentDescription = null,
+                    tint = Mint,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Your household",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextSecondary,
+                )
+                Spacer(Modifier.height(2.dp))
+                val parts = mutableListOf<String>()
+                if (household.adultCount > 0) parts.add("${household.adultCount} adult${if (household.adultCount != 1) "s" else ""}")
+                if (household.childCount > 0) parts.add("${household.childCount} child${if (household.childCount != 1) "ren" else ""}")
+                if (household.petCount > 0) parts.add("${household.petCount} pet${if (household.petCount != 1) "s" else ""}")
+                Text(
+                    parts.joinToString(" · ").ifEmpty { "Not set" },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Icon(
+                Icons.Rounded.Edit,
+                contentDescription = "Edit household",
+                tint = Mint,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

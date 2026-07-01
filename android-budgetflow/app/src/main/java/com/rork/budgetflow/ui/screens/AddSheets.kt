@@ -17,7 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChildCare
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.Pets
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -619,6 +624,151 @@ fun AddBuyingPowerSheet(vm: BudgetViewModel, onDone: () -> Unit) {
             onDone()
         }
         Spacer(Modifier.height(8.dp))
+    }
+}
+
+// --- Household editing -------------------------------------------------------
+
+@Composable
+fun EditHouseholdSheet(vm: BudgetViewModel, onDone: () -> Unit) {
+    val data by vm.data.collectAsStateWithLifecycle()
+    val hh = data.household
+    var adultCount by remember { mutableStateOf(hh.adultCount) }
+    var childCount by remember { mutableStateOf(hh.childCount) }
+    var petCount by remember { mutableStateOf(hh.petCount) }
+    var incomeText by remember { mutableStateOf(if (hh.monthlyIncome > 0) hh.monthlyIncome.toLong().toString() else "") }
+
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+        SheetTitle("Edit household")
+
+        // Adults counter
+        CounterRow(
+            icon = Icons.Rounded.People,
+            label = "Adults",
+            count = adultCount,
+            onCountChange = { adultCount = it },
+            min = 1,
+            max = 8,
+        )
+        Spacer(Modifier.height(16.dp))
+
+        // Children counter
+        CounterRow(
+            icon = Icons.Rounded.ChildCare,
+            label = "Children",
+            count = childCount,
+            onCountChange = { childCount = it },
+            min = 0,
+            max = 10,
+        )
+        Spacer(Modifier.height(16.dp))
+
+        // Pets counter
+        CounterRow(
+            icon = Icons.Rounded.Pets,
+            label = "Pets",
+            count = petCount,
+            onCountChange = { petCount = it },
+            min = 0,
+            max = 15,
+        )
+        Spacer(Modifier.height(16.dp))
+
+        // Income field
+        LabeledField(
+            label = "Monthly take-home income",
+            value = incomeText,
+            onValueChange = { incomeText = it.filter { c -> c.isDigit() || c == '.' } },
+            placeholder = "0.00",
+            keyboardType = KeyboardType.Decimal,
+            prefix = "$",
+        )
+        Spacer(Modifier.height(24.dp))
+
+        PrimaryButton("Save changes") {
+            vm.updateHousehold(
+                com.rork.budgetflow.data.HouseholdProfile(
+                    adultCount = adultCount,
+                    childCount = childCount,
+                    petCount = petCount,
+                    monthlyIncome = incomeText.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: hh.monthlyIncome,
+                )
+            )
+            onDone()
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun CounterRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    count: Int,
+    onCountChange: (Int) -> Unit,
+    min: Int,
+    max: Int,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(com.rork.budgetflow.ui.theme.InkSurface)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = Mint,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                "$count ${if (count == 1) label.trimEnd('s') else label}",
+                style = MaterialTheme.typography.labelSmall,
+                color = TextTertiary,
+            )
+        }
+        // Minus button
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(if (count > min) com.rork.budgetflow.ui.theme.InkElevated else com.rork.budgetflow.ui.theme.Hairline.copy(alpha = 0.3f))
+                .androidClick { if (count > min) onCountChange(count - 1) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.Remove,
+                contentDescription = "Decrease",
+                tint = if (count > min) Mint else TextTertiary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        // Plus button
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(if (count < max) com.rork.budgetflow.ui.theme.InkElevated else com.rork.budgetflow.ui.theme.Hairline.copy(alpha = 0.3f))
+                .androidClick { if (count < max) onCountChange(count + 1) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.Add,
+                contentDescription = "Increase",
+                tint = if (count < max) Mint else TextTertiary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
