@@ -1,0 +1,10 @@
+{
+  "apps": [
+    {
+      "name": "Financial GPS",
+      "path": "android-budgetflow",
+      "framework": "kotlin"
+    }
+  ],
+  "$schema": "https://rork.com/schema/rork.json"
+}
