@@ -5,11 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rork.budgetflow.data.Account
 import com.rork.budgetflow.data.AccountType
-import com.rork.budgetflow.auth.AuthManager
 import com.rork.budgetflow.data.BudgetData
 import com.rork.budgetflow.data.BudgetRepository
 import com.rork.budgetflow.data.BuyingPower
-import com.rork.budgetflow.data.SyncRepository
 import com.rork.budgetflow.data.BuyingPowerType
 import com.rork.budgetflow.data.Category
 import com.rork.budgetflow.data.Dates
@@ -30,34 +28,20 @@ import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 class BudgetViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val authManager = AuthManager(app)
-    private val syncRepo = SyncRepository(app, authManager)
+    private val repo = BudgetRepository(app)
 
     private fun uuid(): String = java.util.UUID.randomUUID().toString()
 
-    private val _data = MutableStateFlow(syncRepo.data.value)
+    private val _data = MutableStateFlow(repo.load())
     val data: StateFlow<BudgetData> = _data.asStateFlow()
-
-    /** True once initial cloud sync has completed (or failed gracefully). */
-    private val _isSynced = MutableStateFlow(false)
-    val isSynced: StateFlow<Boolean> = _isSynced.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            syncRepo.initialSync()
-            _data.value = syncRepo.data.value
-            _isSynced.value = true
-        }
-    }
 
     private fun update(transform: (BudgetData) -> BudgetData) {
         val next = transform(_data.value)
         _data.value = next
-        viewModelScope.launch { syncRepo.save(next) }
+        repo.save(next)
     }
 
     // --- Derived helpers -----------------------------------------------------

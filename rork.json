@@ -5,16 +5,6 @@
       "name": "Financial GPS",
       "path": "android-budgetflow",
       "framework": "kotlin"
-    },
-    {
-      "name": "Backend",
-      "path": "backend",
-      "framework": "supabase"
-    },
-    {
-      "name": "Functions",
-      "path": "functions",
-      "framework": "cloudflare"
     }
   ]
 }
