@@ -5,9 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rork.budgetflow.data.Account
 import com.rork.budgetflow.data.AccountType
+import com.rork.budgetflow.auth.AuthManager
 import com.rork.budgetflow.data.BudgetData
 import com.rork.budgetflow.data.BudgetRepository
 import com.rork.budgetflow.data.BuyingPower
+import com.rork.budgetflow.data.SyncRepository
 import com.rork.budgetflow.data.BuyingPowerType
 import com.rork.budgetflow.data.Category
 import com.rork.budgetflow.data.Dates
@@ -32,15 +34,30 @@ import kotlinx.coroutines.launch
 
 class BudgetViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val repo = BudgetRepository(app)
+    private val authManager = AuthManager(app)
+    private val syncRepo = SyncRepository(app, authManager)
 
-    private val _data = MutableStateFlow(repo.load())
+    private fun uuid(): String = java.util.UUID.randomUUID().toString()
+
+    private val _data = MutableStateFlow(syncRepo.data.value)
     val data: StateFlow<BudgetData> = _data.asStateFlow()
+
+    /** True once initial cloud sync has completed (or failed gracefully). */
+    private val _isSynced = MutableStateFlow(false)
+    val isSynced: StateFlow<Boolean> = _isSynced.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            syncRepo.initialSync()
+            _data.value = syncRepo.data.value
+            _isSynced.value = true
+        }
+    }
 
     private fun update(transform: (BudgetData) -> BudgetData) {
         val next = transform(_data.value)
         _data.value = next
-        viewModelScope.launch { repo.save(next) }
+        viewModelScope.launch { syncRepo.save(next) }
     }
 
     // --- Derived helpers -----------------------------------------------------
@@ -99,7 +116,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         if (amount <= 0.0) return
         val tx = Transaction(
-            id = BudgetRepository.uuid(),
+            id = uuid(),
             title = title.trim().ifBlank { if (isIncome) "Income" else "Expense" },
             amount = amount,
             accountId = accountId,
@@ -145,7 +162,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         update { d ->
             d.copy(
                 accounts = d.accounts + Account(
-                    id = BudgetRepository.uuid(),
+                    id = uuid(),
                     name = name.trim().ifBlank { type.label },
                     type = type,
                     balance = balance,
@@ -166,7 +183,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         update { d ->
             d.copy(
                 categories = d.categories + Category(
-                    id = BudgetRepository.uuid(),
+                    id = uuid(),
                     name = name.trim().ifBlank { "Category" },
                     iconKey = iconKey,
                     colorArgb = colorArgb,
@@ -201,7 +218,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         update { d ->
             d.copy(
                 goals = d.goals + SavingsGoal(
-                    id = BudgetRepository.uuid(),
+                    id = uuid(),
                     name = name.trim().ifBlank { "Goal" },
                     target = target,
                     saved = 0.0,
@@ -240,7 +257,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         update { d ->
             d.copy(
                 debts = d.debts + Debt(
-                    id = BudgetRepository.uuid(),
+                    id = uuid(),
                     name = name.trim().ifBlank { "Debt" },
                     total = total,
                     paid = 0.0,
@@ -293,7 +310,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         update { d ->
             d.copy(
                 vehicles = d.vehicles + Vehicle(
-                    id = BudgetRepository.uuid(),
+                    id = uuid(),
                     make = make.trim().ifBlank { "Vehicle" },
                     model = model.trim(),
                     year = year,
@@ -373,7 +390,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
             val filtered = d.buyingPowers.filterNot { it.type == type }
             d.copy(
                 buyingPowers = filtered + BuyingPower(
-                    id = BudgetRepository.uuid(),
+                    id = uuid(),
                     type = type,
                     maxPurchase = maxPurchase,
                     monthlyPayment = monthlyPayment,
@@ -428,7 +445,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
             if (!existing) {
                 extraCats.add(
                     Category(
-                        id = BudgetRepository.uuid(),
+                        id = uuid(),
                         name = "Children",
                         iconKey = "child",
                         colorArgb = 0xFFF5C451,
@@ -443,7 +460,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
             if (!existing) {
                 extraCats.add(
                     Category(
-                        id = BudgetRepository.uuid(),
+                        id = uuid(),
                         name = "Pets",
                         iconKey = "pets",
                         colorArgb = 0xFF5EC2FF,
