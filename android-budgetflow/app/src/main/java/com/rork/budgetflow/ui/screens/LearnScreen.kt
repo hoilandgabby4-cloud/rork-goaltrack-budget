@@ -1,6 +1,8 @@
 package com.rork.budgetflow.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +21,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Movie
@@ -27,6 +34,7 @@ import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Warning
@@ -235,6 +243,20 @@ fun LearnScreen(
                 }
             }
         }
+
+        // --- App Help / Usage Guide ---
+        SectionHeading(
+            title = "How to use BudgetFlow",
+            subtitle = "A guided tour of every tab in the app",
+            icon = Icons.Rounded.HelpOutline,
+            color = Sky,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        // Expandable help cards
+        AppHelpSection()
+
+        Spacer(Modifier.height(24.dp))
 
         // --- Budgeting Education ---
         SectionHeading(
@@ -495,6 +517,179 @@ private fun PersonalizedInsightCard(
                     color = TextSecondary,
                     lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.4f,
                 )
+            }
+        }
+    }
+}
+
+private data class HelpItem(
+    val icon: ImageVector,
+    val title: String,
+    val accentColor: Color,
+    val steps: List<String>,
+)
+
+@Composable
+private fun AppHelpSection() {
+    val helpItems = remember {
+        listOf(
+            HelpItem(
+                icon = Icons.Rounded.Home,
+                title = "Home tab",
+                accentColor = Mint,
+                steps = listOf(
+                    "See your total net worth, monthly income, and spending at a glance.",
+                    "Tap \"See all accounts\" to jump to the Wallet tab and manage your payment methods.",
+                    "Tap \"See all activity\" to jump to the Activity tab and review transactions.",
+                    "The \"+\" button in the bottom bar opens the quick-add transaction sheet from any tab.",
+                ),
+            ),
+            HelpItem(
+                icon = Icons.Rounded.CreditCard,
+                title = "Wallet tab",
+                accentColor = Sky,
+                steps = listOf(
+                    "Add all your payment accounts — checking, savings, credit cards, investments, and retirement.",
+                    "Tap any account to see its balance and recent activity.",
+                    "Credit cards show a circular gauge of available credit vs. credit limit so you never max out.",
+                    "Use the \"+\" button or the add button to create new accounts.",
+                ),
+            ),
+            HelpItem(
+                icon = Icons.Rounded.BarChart,
+                title = "Budget tab",
+                accentColor = Coral,
+                steps = listOf(
+                    "Budget sub-tab — set spending categories with suggested percentage guidelines and monthly budget caps.",
+                    "Each category shows a progress bar tracking actual spending against your budget target.",
+                    "Tap edit to change a category's name, budget, percentage, icon, or color.",
+                    "Calendar sub-tab — add recurring bills by day-of-month and mark vacation dates.",
+                    "When adding a transaction with the recurring bill toggle, a matching calendar event is created automatically.",
+                    "Monthly sub-tab — view a 12-month bar chart comparing income vs. spending over time.",
+                ),
+            ),
+            HelpItem(
+                icon = Icons.Rounded.SwapVert,
+                title = "Activity tab",
+                accentColor = Mint,
+                steps = listOf(
+                    "See every transaction you've recorded, newest first.",
+                    "Tap any transaction to see details: category, account, amount, date, and notes.",
+                    "Swipe left on a transaction to delete it — linked recurring calendar events are also cleaned up.",
+                    "Use the search bar or filter chips at the top to find specific transactions fast.",
+                ),
+            ),
+            HelpItem(
+                icon = Icons.Rounded.Flag,
+                title = "Goals tab",
+                accentColor = Gold,
+                steps = listOf(
+                    "Goals sub-tab — track savings goals with a target amount and progress ring. Tap \"Contribute\" to add money toward any goal.",
+                    "Debts sub-tab — track debts with total owed, amount paid, and a payoff progress bar. Tap \"Pay debt\" to record a payment.",
+                    "Assets sub-tab — add vehicles you own with purchase price and current value. See car and home buying-power estimates based on your real numbers.",
+                    "Buying power calculators use your income, savings, and debts to estimate what you can afford.",
+                ),
+            ),
+            HelpItem(
+                icon = Icons.Rounded.Lightbulb,
+                title = "Learn tab",
+                accentColor = Violet,
+                steps = listOf(
+                    "You're here now! This tab gives you personalized financial insights and education.",
+                    "Recommendations at the top are tailored to your spending patterns and life situation.",
+                    "Scroll down for guides on budgeting, investing, and smart purchasing decisions.",
+                    "Use the tips here to build better money habits and reach your financial goals faster.",
+                ),
+            ),
+        )
+    }
+
+    var expandedIndex by remember { mutableStateOf<Int?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        helpItems.forEachIndexed { index, item ->
+            val isExpanded = expandedIndex == index
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        if (isExpanded) item.accentColor.copy(alpha = 0.08f) else InkElevated
+                    )
+                    .animateContentSize()
+                    .clickable { expandedIndex = if (isExpanded) null else index },
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(item.accentColor.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                item.icon,
+                                contentDescription = null,
+                                tint = item.accentColor,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            item.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            if (isExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            tint = TextTertiary,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+
+                    if (isExpanded) {
+                        Spacer(Modifier.height(14.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(item.accentColor.copy(alpha = 0.12f)),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        item.steps.forEachIndexed { stepIndex, step ->
+                            Row(
+                                modifier = Modifier.padding(vertical = 3.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 7.dp)
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(item.accentColor.copy(alpha = 0.6f)),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    step,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary,
+                                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.45f,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
