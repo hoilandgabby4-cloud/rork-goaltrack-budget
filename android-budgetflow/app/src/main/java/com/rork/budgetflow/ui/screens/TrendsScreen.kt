@@ -480,13 +480,13 @@ private fun CalendarTab(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Month navigation header
+        // Month & year header — clearly separated above the calendar grid
         item {
             GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 20.dp) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
@@ -507,14 +507,17 @@ private fun CalendarTab(
                         )
                     }
 
-                    Text(
-                        monthLabel,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.SemiBold,
+                    Column(
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            monthLabel,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
 
                     Box(
                         modifier = Modifier
@@ -534,76 +537,81 @@ private fun CalendarTab(
                         )
                     }
                 }
+            }
+        }
 
-                Spacer(Modifier.height(8.dp))
-
-                // Day-of-week header (Mon–Sun)
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                        Text(
-                            day,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextTertiary,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f),
-                        )
+        // Calendar grid — uniform square cells in their own card
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 20.dp) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // Day-of-week header (Mon–Sun)
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+                            Text(
+                                day,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextTertiary,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
-                }
 
-                Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(6.dp))
 
-                // Day grid — 6 rows max, each cell is a uniform square
-                val rows = (offsetDays + daysInMonth + 6) / 7
+                    // Day grid — 6 rows max, each cell is a uniform square
+                    val rows = (offsetDays + daysInMonth + 6) / 7
 
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    for (row in 0 until rows) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            for (col in 0..6) {
-                                val idx = row * 7 + col
-                                val day = idx - offsetDays + 1
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        for (row in 0 until rows) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                for (col in 0..6) {
+                                    val idx = row * 7 + col
+                                    val day = idx - offsetDays + 1
 
-                                if (day in 1..daysInMonth) {
-                                    val isToday = (year == Calendar.getInstance().get(Calendar.YEAR) &&
-                                        month == Calendar.getInstance().get(Calendar.MONTH) &&
-                                        day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH))
-                                    val isSelected = day == selectedDay
-                                    val dayEvents = eventsByDay[day] ?: emptyList()
+                                    if (day in 1..daysInMonth) {
+                                        val isToday = (year == Calendar.getInstance().get(Calendar.YEAR) &&
+                                            month == Calendar.getInstance().get(Calendar.MONTH) &&
+                                            day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH))
+                                        val isSelected = day == selectedDay
+                                        val dayEvents = eventsByDay[day] ?: emptyList()
 
-                                    DayCell(
-                                        day = day,
-                                        isToday = isToday,
-                                        isSelected = isSelected,
-                                        events = dayEvents,
-                                        onClick = { selectedDay = if (isSelected) null else day },
-                                        modifier = Modifier.weight(1f).aspectRatio(1f),
-                                    )
-                                } else {
-                                    Spacer(Modifier.weight(1f).aspectRatio(1f))
+                                        DayCell(
+                                            day = day,
+                                            isToday = isToday,
+                                            isSelected = isSelected,
+                                            events = dayEvents,
+                                            onClick = { selectedDay = if (isSelected) null else day },
+                                            modifier = Modifier.weight(1f).aspectRatio(1f),
+                                        )
+                                    } else {
+                                        Spacer(Modifier.weight(1f).aspectRatio(1f))
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(8.dp))
 
-                // Legend
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.size(10.dp).clip(CircleShape).background(Mint))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Bill", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                    Spacer(Modifier.width(16.dp))
-                    Box(Modifier.size(10.dp).clip(CircleShape).background(Coral))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Vacation", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+                    // Legend
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.size(10.dp).clip(CircleShape).background(Mint))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Bill", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+                        Spacer(Modifier.width(16.dp))
+                        Box(Modifier.size(10.dp).clip(CircleShape).background(Coral))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Vacation", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+                    }
                 }
             }
         }
