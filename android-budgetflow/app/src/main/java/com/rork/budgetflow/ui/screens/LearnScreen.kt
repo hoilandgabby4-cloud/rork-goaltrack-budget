@@ -442,7 +442,10 @@ fun LearnScreen(
         )
         Spacer(Modifier.height(12.dp))
 
-        HealthyFoodSection()
+        HealthyFoodSection(
+            adultCount = data.household.adultCount,
+            childCount = data.household.childCount,
+        )
 
         Spacer(Modifier.height(20.dp))
 
@@ -934,7 +937,18 @@ private data class FoodCategory(
 )
 
 @Composable
-private fun HealthyFoodSection() {
+private fun HealthyFoodSection(
+    adultCount: Int = 1,
+    childCount: Int = 0,
+) {
+    // Recommended monthly grocery budget: $300-350 per adult, $100-150 per child
+    val adultMin = adultCount * 300
+    val adultMax = adultCount * 350
+    val childMin = childCount * 100
+    val childMax = childCount * 150
+    val totalMin = adultMin + childMin
+    val totalMax = adultMax + childMax
+
     val categories = remember {
         listOf(
             FoodCategory(
@@ -1073,6 +1087,161 @@ private fun HealthyFoodSection() {
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Grocery budget recommendation card
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(MintDeep.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Rounded.Savings,
+                            contentDescription = null,
+                            tint = MintDeep,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Your recommended grocery budget",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "Based on your household size",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextTertiary,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Big total range
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        "\$${totalMin}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MintDeep,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        " – \$${totalMax}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MintDeep,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "/ month",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                // Breakdown by adult / child
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (adultCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Mint.copy(alpha = 0.10f)),
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Rounded.LocalDining,
+                                        contentDescription = null,
+                                        tint = Mint,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        "Per adult",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = TextSecondary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "\$300 – \$350",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Text(
+                                    "$adultCount adult${if (adultCount == 1) "" else "s"} = \$${adultMin} – \$${adultMax}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TextTertiary,
+                                )
+                            }
+                        }
+                    }
+                    if (childCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Sky.copy(alpha = 0.10f)),
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Rounded.ChildCare,
+                                        contentDescription = null,
+                                        tint = Sky,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        "Per child",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = TextSecondary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "\$100 – \$150",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Text(
+                                    "$childCount child${if (childCount == 1) "" else "ren"} = \$${childMin} – \$${childMax}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TextTertiary,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                Text(
+                    "These estimates assume home-cooked meals using the budget-friendly foods listed below. Costs vary by region and dietary needs — adjust as needed for your situation.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextTertiary,
+                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.4f,
+                )
+            }
+        }
+
         // Main clickable card
         GlassCard(
             modifier = Modifier
