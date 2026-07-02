@@ -3,7 +3,6 @@ package com.rork.budgetflow.data
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.rork.budgetflow.ui.theme.AccentPalette
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
@@ -14,100 +13,30 @@ class BudgetRepository(context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun load(): BudgetData {
-        val raw = prefs.getString(KEY_DATA, null) ?: return seed()
-        return runCatching { json.decodeFromString(BudgetData.serializer(), raw) }.getOrElse { seed() }
+        val raw = prefs.getString(KEY_DATA, null) ?: return emptyData()
+        return runCatching { json.decodeFromString(BudgetData.serializer(), raw) }.getOrElse { emptyData() }
     }
 
     fun save(data: BudgetData) {
         prefs.edit().putString(KEY_DATA, json.encodeToString(BudgetData.serializer(), data)).apply()
     }
 
-    private fun seed(): BudgetData {
-        // Seed default categories totaling 100% of income
-        val now = System.currentTimeMillis()
-        val day = 86_400_000L
-
-        val checking = Account(uuid(), "Everyday Checking", AccountType.CHECKING, 2840.0, AccentPalette[1].toArgb().toLong())
-        val savingsAcct = Account(uuid(), "Emergency Fund", AccountType.SAVINGS, 6200.0, AccentPalette[0].toArgb().toLong())
-        val visa = Account(uuid(), "Visa Platinum", AccountType.CREDIT, 640.0, AccentPalette[3].toArgb().toLong(), creditLimit = 5000.0)
-        val cash = Account(uuid(), "Cash Wallet", AccountType.CASH, 120.0, AccentPalette[2].toArgb().toLong())
-        val retirement = Account(uuid(), "Vanguard 401k", AccountType.RETIREMENT, 42500.0, AccentPalette[7].toArgb().toLong())
-
-        // Suggested percentages add up to 100% of income
-        val housing = Category(uuid(), "Housing", "house", AccentPalette[2].toArgb().toLong(), 960.0, 30.0)
-        val bills = Category(uuid(), "Monthly Bills", "bolt", AccentPalette[4].toArgb().toLong(), 640.0, 20.0)
-        val car = Category(uuid(), "Car", "car", AccentPalette[1].toArgb().toLong(), 640.0, 20.0)
-        val groceries = Category(uuid(), "Groceries", "cart", AccentPalette[0].toArgb().toLong(), 320.0, 10.0)
-        val shopping = Category(uuid(), "Shopping", "shopping", AccentPalette[6].toArgb().toLong(), 320.0, 10.0)
-        val savingsCat = Category(uuid(), "Savings", "savings", AccentPalette[5].toArgb().toLong(), 320.0, 10.0)
-
-        val tx = listOf(
-            Transaction(uuid(), "Whole Foods", 64.20, checking.id, groceries.id, false, now - day / 4),
-            Transaction(uuid(), "Shell Gas", 48.50, visa.id, car.id, false, now - day / 2),
-            Transaction(uuid(), "Electric Bill", 92.10, checking.id, bills.id, false, now - day),
-            Transaction(uuid(), "Internet Bill", 79.99, visa.id, bills.id, false, now - day * 2),
-            Transaction(uuid(), "Paycheck", 3200.00, checking.id, null, true, now - day * 3),
-            Transaction(uuid(), "Nike Store", 119.99, visa.id, shopping.id, false, now - day * 4),
-            Transaction(uuid(), "Trader Joe's", 47.85, checking.id, groceries.id, false, now - day * 5),
-            Transaction(uuid(), "Rent", 1200.00, checking.id, housing.id, false, now - day * 6),
-            Transaction(uuid(), "Auto Transfer", 300.00, savingsAcct.id, savingsCat.id, false, now - day * 7),
-        )
-
-        val goals = listOf(
-            SavingsGoal(uuid(), "Japan Trip", 4000.0, 1450.0, AccentPalette[3].toArgb().toLong(), "flight", now + day * 180),
-            SavingsGoal(uuid(), "New MacBook", 2500.0, 900.0, AccentPalette[1].toArgb().toLong(), "star"),
-            SavingsGoal(uuid(), "Rainy Day", 10000.0, 6200.0, AccentPalette[0].toArgb().toLong(), "savings"),
-        )
-
-        val debts = listOf(
-            Debt(uuid(), "Student Loan", 18000.0, 7400.0, 4.5, AccentPalette[4].toArgb().toLong()),
-            Debt(uuid(), "Car Loan", 12000.0, 8600.0, 6.2, AccentPalette[1].toArgb().toLong()),
-            Debt(uuid(), "Visa Balance", 640.0, 0.0, 19.9, AccentPalette[3].toArgb().toLong()),
-        )
-
-        val vehicles = listOf(
-            Vehicle(uuid(), "Honda", "Civic", 2020, 22000.0, null, AccentPalette[6].toArgb().toLong()),
-            Vehicle(uuid(), "Toyota", "RAV4", 2023, 32000.0, 28500.0, AccentPalette[1].toArgb().toLong()),
-        )
-
-        val buyingPowers = listOf(
-            BuyingPower(uuid(), BuyingPowerType.CAR, 22000.0, 390.0, AccentPalette[3].toArgb().toLong()),
-            BuyingPower(uuid(), BuyingPowerType.HOME, 280000.0, 1680.0, AccentPalette[0].toArgb().toLong()),
-        )
-
-        // Seed calendar events: recurring bills + upcoming vacation
-        val cal = java.util.Calendar.getInstance()
-        val thisMonth = cal.get(java.util.Calendar.MONTH)
-        val thisYear = cal.get(java.util.Calendar.YEAR)
-        fun dayTimestamp(day: Int, monthOffset: Int = 0): Long {
-            val c = java.util.Calendar.getInstance()
-            c.set(thisYear, thisMonth + monthOffset, day, 10, 0, 0)
-            c.set(java.util.Calendar.MILLISECOND, 0)
-            return c.timeInMillis
-        }
-        val calendarEvents = listOf(
-            com.rork.budgetflow.data.CalendarEvent(uuid(), "Rent Due", com.rork.budgetflow.data.CalendarEventType.BILL, 1, dayTimestamp(1), null, 1200.0, housing.id, AccentPalette[2].toArgb().toLong(), "Monthly apartment rent"),
-            com.rork.budgetflow.data.CalendarEvent(uuid(), "Electric Bill", com.rork.budgetflow.data.CalendarEventType.BILL, 15, dayTimestamp(15), null, 92.10, bills.id, AccentPalette[4].toArgb().toLong(), "Monthly electric utility"),
-            com.rork.budgetflow.data.CalendarEvent(uuid(), "Internet Bill", com.rork.budgetflow.data.CalendarEventType.BILL, 20, dayTimestamp(20), null, 79.99, bills.id, AccentPalette[4].toArgb().toLong(), "Monthly internet service"),
-            com.rork.budgetflow.data.CalendarEvent(uuid(), "Car Insurance", com.rork.budgetflow.data.CalendarEventType.BILL, 10, dayTimestamp(10), null, 135.00, car.id, AccentPalette[1].toArgb().toLong(), "Auto insurance premium"),
-            com.rork.budgetflow.data.CalendarEvent(uuid(), "Summer Beach Trip", com.rork.budgetflow.data.CalendarEventType.VACATION, 4, dayTimestamp(4, 1), dayTimestamp(8, 1), 0.0, null, AccentPalette[3].toArgb().toLong(), "Family vacation to the coast"),
-        )
-
-        return BudgetData(
-            accounts = listOf(checking, savingsAcct, visa, cash, retirement),
-            categories = listOf(housing, bills, car, groceries, shopping, savingsCat),
-            transactions = tx,
-            goals = goals,
-            debts = debts,
-            vehicles = vehicles,
-            buyingPowers = buyingPowers,
-            calendarEvents = calendarEvents,
-            onboarded = false,
-        )
-    }
+    /** A clean, empty state for first-time users — no demo accounts, transactions, or goals. */
+    private fun emptyData(): BudgetData = BudgetData(
+        accounts = emptyList(),
+        categories = emptyList(),
+        transactions = emptyList(),
+        goals = emptyList(),
+        debts = emptyList(),
+        vehicles = emptyList(),
+        buyingPowers = emptyList(),
+        calendarEvents = emptyList(),
+        household = HouseholdProfile(),
+        onboarded = false,
+    )
 
     companion object {
-        private const val KEY_DATA = "budget_data_v1"
+        private const val KEY_DATA = "budget_data_v2"
         fun uuid(): String = UUID.randomUUID().toString()
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rork.budgetflow.data.Account
@@ -167,18 +169,22 @@ fun DashboardScreen(
                 },
             )
         }
-        items(data.transactions.take(5)) { tx ->
-            val acc = vm.account(tx.accountId)
-            val cat = vm.category(tx.categoryId)
-            TransactionRow(
-                title = tx.title,
-                subtitle = (acc?.name ?: "Account") + (cat?.let { " · ${it.name}" } ?: ""),
-                amount = tx.amount,
-                isIncome = tx.isIncome,
-                time = Dates.relative(tx.timestamp),
-                iconKey = cat?.iconKey ?: "pay",
-                color = cat?.colorArgb?.toColor() ?: Mint,
-            )
+        if (data.transactions.isEmpty()) {
+            item { EmptyHint(icon = Icons.Rounded.ReceiptLong, title = "No transactions yet", subtitle = "Tap the + button to log your first one") }
+        } else {
+            items(data.transactions.take(5)) { tx ->
+                val acc = vm.account(tx.accountId)
+                val cat = vm.category(tx.categoryId)
+                TransactionRow(
+                    title = tx.title,
+                    subtitle = (acc?.name ?: "Account") + (cat?.let { " · ${it.name}" } ?: ""),
+                    amount = tx.amount,
+                    isIncome = tx.isIncome,
+                    time = Dates.relative(tx.timestamp),
+                    iconKey = cat?.iconKey ?: "pay",
+                    color = cat?.colorArgb?.toColor() ?: Mint,
+                )
+            }
         }
 
         // Financial health dashboard — score + metrics
@@ -199,7 +205,11 @@ fun DashboardScreen(
                 },
             )
         }
-        item { AccountCarousel(accounts = data.accounts, onSeeAccounts = onSeeAccounts) }
+        if (data.accounts.isEmpty()) {
+            item { EmptyHint(icon = Icons.Rounded.AccountBalanceWallet, title = "No accounts yet", subtitle = "Add a checking, savings, or credit account to get started") }
+        } else {
+            item { AccountCarousel(accounts = data.accounts, onSeeAccounts = onSeeAccounts) }
+        }
 
         item { NetWorthCard(net = net, available = available, owed = owed) }
     }
@@ -559,5 +569,39 @@ fun TransactionRow(
             Spacer(Modifier.height(2.dp))
             Text(time, style = MaterialTheme.typography.labelSmall, color = TextTertiary)
         }
+    }
+}
+
+@Composable
+private fun EmptyHint(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(InkElevated)
+            .padding(vertical = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        IconChip(color = Mint, size = 56.dp) {
+            Icon(icon, contentDescription = null, tint = Mint, modifier = Modifier.size(26.dp))
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        )
     }
 }

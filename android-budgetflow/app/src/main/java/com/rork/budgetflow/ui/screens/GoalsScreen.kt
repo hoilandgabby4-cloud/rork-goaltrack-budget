@@ -24,10 +24,12 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -118,8 +121,12 @@ fun GoalsScreen(
         when (tab) {
             GoalTab.GOALS -> {
                 item { AddRow("New savings goal", onAddGoal) }
-                items(data.goals, key = { it.id }) { goal ->
-                    GoalCard(goal, onContribute = { onContribute(goal.id) }, onLongDelete = { vm.deleteGoal(goal.id) })
+                if (data.goals.isEmpty()) {
+                    item { EmptySectionHint(icon = Icons.Rounded.Star, title = "No savings goals yet", subtitle = "Create a goal like an emergency fund, vacation, or new car") }
+                } else {
+                    items(data.goals, key = { it.id }) { goal ->
+                        GoalCard(goal, onContribute = { onContribute(goal.id) }, onLongDelete = { vm.deleteGoal(goal.id) })
+                    }
                 }
             }
             GoalTab.DEBTS -> {
@@ -128,8 +135,12 @@ fun GoalsScreen(
                     DebtSummary(total)
                 }
                 item { AddRow("New debt", onAddDebt) }
-                items(data.debts, key = { it.id }) { debt ->
-                    DebtCard(debt, onPay = { onPayDebt(debt.id) }, onLongDelete = { vm.deleteDebt(debt.id) })
+                if (data.debts.isEmpty()) {
+                    item { EmptySectionHint(icon = Icons.Rounded.CreditCard, title = "No debts tracked yet", subtitle = "Add student loans, car loans, or credit card balances to monitor payoff progress") }
+                } else {
+                    items(data.debts, key = { it.id }) { debt ->
+                        DebtCard(debt, onPay = { onPayDebt(debt.id) }, onLongDelete = { vm.deleteDebt(debt.id) })
+                    }
                 }
             }
             GoalTab.ASSETS -> {
@@ -145,8 +156,12 @@ fun GoalsScreen(
                     )
                 }
                 item { AddRow("Add vehicle", onAddVehicle) }
-                items(data.vehicles, key = { it.id }) { vehicle ->
-                    VehicleCard(vehicle, vm, onLongDelete = { vm.deleteVehicle(vehicle.id) })
+                if (data.vehicles.isEmpty()) {
+                    item { EmptySectionHint(icon = Icons.Rounded.DirectionsCar, title = "No vehicles yet", subtitle = "Add your car or truck to track its value over time") }
+                } else {
+                    items(data.vehicles, key = { it.id }) { vehicle ->
+                        VehicleCard(vehicle, vm, onLongDelete = { vm.deleteVehicle(vehicle.id) })
+                    }
                 }
 
                 item {
@@ -658,5 +673,39 @@ private fun BuyingPowerCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptySectionHint(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(InkElevated)
+            .padding(vertical = 36.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        IconChip(color = Mint, size = 56.dp) {
+            Icon(icon, contentDescription = null, tint = Mint, modifier = Modifier.size(26.dp))
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        )
     }
 }
