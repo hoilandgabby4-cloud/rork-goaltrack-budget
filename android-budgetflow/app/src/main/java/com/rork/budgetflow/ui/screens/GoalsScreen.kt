@@ -83,6 +83,10 @@ fun GoalsScreen(
     onPayDebt: (String) -> Unit,
     onAddVehicle: () -> Unit,
     onAddBuyingPower: () -> Unit,
+    onEditGoal: (com.rork.budgetflow.data.SavingsGoal) -> Unit = {},
+    onEditDebt: (com.rork.budgetflow.data.Debt) -> Unit = {},
+    onEditVehicle: (com.rork.budgetflow.data.Vehicle) -> Unit = {},
+    onEditBuyingPower: (com.rork.budgetflow.data.BuyingPower) -> Unit = {},
 ) {
     val data by vm.data.collectAsStateWithLifecycle()
     var tab by remember { mutableStateOf(GoalTab.GOALS) }
@@ -125,7 +129,7 @@ fun GoalsScreen(
                     item { EmptySectionHint(icon = Icons.Rounded.Star, title = "No savings goals yet", subtitle = "Create a goal like an emergency fund, vacation, or new car") }
                 } else {
                     items(data.goals, key = { it.id }) { goal ->
-                        GoalCard(goal, onContribute = { onContribute(goal.id) }, onLongDelete = { vm.deleteGoal(goal.id) })
+                        GoalCard(goal, onContribute = { onContribute(goal.id) }, onEdit = { onEditGoal(goal) })
                     }
                 }
             }
@@ -139,7 +143,7 @@ fun GoalsScreen(
                     item { EmptySectionHint(icon = Icons.Rounded.CreditCard, title = "No debts tracked yet", subtitle = "Add student loans, car loans, or credit card balances to monitor payoff progress") }
                 } else {
                     items(data.debts, key = { it.id }) { debt ->
-                        DebtCard(debt, onPay = { onPayDebt(debt.id) }, onLongDelete = { vm.deleteDebt(debt.id) })
+                        DebtCard(debt, onPay = { onPayDebt(debt.id) }, onEdit = { onEditDebt(debt) })
                     }
                 }
             }
@@ -160,7 +164,7 @@ fun GoalsScreen(
                     item { EmptySectionHint(icon = Icons.Rounded.DirectionsCar, title = "No vehicles yet", subtitle = "Add your car or truck to track its value over time") }
                 } else {
                     items(data.vehicles, key = { it.id }) { vehicle ->
-                        VehicleCard(vehicle, vm, onLongDelete = { vm.deleteVehicle(vehicle.id) })
+                        VehicleCard(vehicle, vm, onEdit = { onEditVehicle(vehicle) })
                     }
                 }
 
@@ -190,7 +194,7 @@ fun GoalsScreen(
                 item {
                     OtherBuyingPowerSection(
                         customBps = data.buyingPowers,
-                        onDelete = { vm.deleteBuyingPower(it.id) },
+                        onEdit = { onEditBuyingPower(it) },
                         onAdd = onAddBuyingPower,
                     )
                 }
@@ -237,7 +241,7 @@ private fun AddRow(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun GoalCard(goal: SavingsGoal, onContribute: () -> Unit, onLongDelete: () -> Unit) {
+private fun GoalCard(goal: SavingsGoal, onContribute: () -> Unit, onEdit: () -> Unit) {
     val color = goal.colorArgb.toColor()
     val ratio = (goal.saved / goal.target).toFloat().coerceIn(0f, 1f)
     val done = goal.saved >= goal.target
@@ -246,7 +250,7 @@ private fun GoalCard(goal: SavingsGoal, onContribute: () -> Unit, onLongDelete: 
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(InkElevated)
-            .androidClick(onLongDelete)
+            .androidClick(onEdit)
             .padding(20.dp)
     ) {
         Column {
@@ -335,7 +339,7 @@ private fun DebtSummary(total: Double) {
 }
 
 @Composable
-private fun DebtCard(debt: Debt, onPay: () -> Unit, onLongDelete: () -> Unit) {
+private fun DebtCard(debt: Debt, onPay: () -> Unit, onEdit: () -> Unit) {
     val color = debt.colorArgb.toColor()
     val remaining = debt.total - debt.paid
     val ratio = (debt.paid / debt.total).toFloat().coerceIn(0f, 1f)
@@ -345,7 +349,7 @@ private fun DebtCard(debt: Debt, onPay: () -> Unit, onLongDelete: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(InkElevated)
-            .androidClick(onLongDelete)
+            .androidClick(onEdit)
             .padding(20.dp)
     ) {
         Column {
@@ -445,7 +449,7 @@ private fun VehicleWorthSummary(vm: BudgetViewModel) {
 }
 
 @Composable
-private fun VehicleCard(vehicle: Vehicle, vm: BudgetViewModel, onLongDelete: () -> Unit) {
+private fun VehicleCard(vehicle: Vehicle, vm: BudgetViewModel, onEdit: () -> Unit) {
     val color = vehicle.colorArgb.toColor()
     val estimated = vm.estimatedVehicleValue(vehicle)
     val hasManualValue = vehicle.currentValue != null
@@ -457,7 +461,7 @@ private fun VehicleCard(vehicle: Vehicle, vm: BudgetViewModel, onLongDelete: () 
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(InkElevated)
-            .androidClick(onLongDelete)
+            .androidClick(onEdit)
             .padding(20.dp)
     ) {
         Column {
@@ -528,7 +532,7 @@ private fun VehicleCard(vehicle: Vehicle, vm: BudgetViewModel, onLongDelete: () 
 @Composable
 private fun OtherBuyingPowerSection(
     customBps: List<BuyingPower>,
-    onDelete: (BuyingPower) -> Unit,
+    onEdit: (BuyingPower) -> Unit,
     onAdd: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -579,7 +583,7 @@ private fun OtherBuyingPowerSection(
                         BuyingPowerCard(
                             bp,
                             modifier = Modifier.fillMaxWidth(),
-                            onLongDelete = { onDelete(bp) },
+                            onClick = { onEdit(bp) },
                         )
                     }
                 }
@@ -596,7 +600,7 @@ private fun OtherBuyingPowerSection(
 private fun BuyingPowerCard(
     bp: BuyingPower,
     modifier: Modifier = Modifier,
-    onLongDelete: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     val accent = when (bp.type) {
         BuyingPowerType.CAR -> Gold
@@ -615,7 +619,7 @@ private fun BuyingPowerCard(
         modifier = modifier
             .clip(RoundedCornerShape(24.dp))
             .background(InkElevated)
-            .then(if (onLongDelete != null) Modifier.androidClick(onLongDelete) else Modifier)
+            .then(if (onClick != null) Modifier.androidClick(onClick) else Modifier)
             .padding(20.dp)
     ) {
         Column {

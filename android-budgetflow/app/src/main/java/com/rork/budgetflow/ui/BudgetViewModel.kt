@@ -172,6 +172,20 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun updateAccount(id: String, name: String, type: AccountType, balance: Double, colorArgb: Long, creditLimit: Double) {
+        update { d ->
+            d.copy(accounts = d.accounts.map {
+                if (it.id == id) it.copy(
+                    name = name.trim().ifBlank { type.label },
+                    type = type,
+                    balance = balance,
+                    colorArgb = colorArgb,
+                    creditLimit = creditLimit,
+                ) else it
+            })
+        }
+    }
+
     fun deleteAccount(id: String) {
         update { d -> d.copy(accounts = d.accounts.filterNot { it.id == id }) }
     }
@@ -407,6 +421,19 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun updateGoal(id: String, name: String, target: Double, colorArgb: Long, iconKey: String) {
+        update { d ->
+            d.copy(goals = d.goals.map {
+                if (it.id == id) it.copy(
+                    name = name.trim().ifBlank { "Goal" },
+                    target = target,
+                    colorArgb = colorArgb,
+                    iconKey = iconKey,
+                ) else it
+            })
+        }
+    }
+
     fun deleteGoal(id: String) {
         update { d -> d.copy(goals = d.goals.filterNot { it.id == id }) }
     }
@@ -446,6 +473,19 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun updateDebt(id: String, name: String, total: Double, apr: Double, colorArgb: Long) {
+        update { d ->
+            d.copy(debts = d.debts.map {
+                if (it.id == id) it.copy(
+                    name = name.trim().ifBlank { "Debt" },
+                    total = total,
+                    apr = apr,
+                    colorArgb = colorArgb,
+                ) else it
+            })
+        }
+    }
+
     fun deleteDebt(id: String) {
         update { d -> d.copy(debts = d.debts.filterNot { it.id == id }) }
     }
@@ -482,10 +522,25 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun updateVehicleValue(id: String, currentValue: Double?) {
+    fun updateVehicle(
+        id: String,
+        make: String,
+        model: String,
+        year: Int,
+        purchasePrice: Double,
+        currentValue: Double?,
+        colorArgb: Long,
+    ) {
         update { d ->
             d.copy(vehicles = d.vehicles.map {
-                if (it.id == id) it.copy(currentValue = currentValue) else it
+                if (it.id == id) it.copy(
+                    make = make.trim().ifBlank { "Vehicle" },
+                    model = model.trim(),
+                    year = year,
+                    purchasePrice = purchasePrice,
+                    currentValue = currentValue,
+                    colorArgb = colorArgb,
+                ) else it
             })
         }
     }
@@ -557,6 +612,19 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
                     colorArgb = colorArgb,
                 )
             )
+        }
+    }
+
+    fun updateBuyingPower(id: String, type: BuyingPowerType, maxPurchase: Double, monthlyPayment: Double, colorArgb: Long) {
+        update { d ->
+            d.copy(buyingPowers = d.buyingPowers.map {
+                if (it.id == id) it.copy(
+                    type = type,
+                    maxPurchase = maxPurchase,
+                    monthlyPayment = monthlyPayment,
+                    colorArgb = colorArgb,
+                ) else it
+            })
         }
     }
 

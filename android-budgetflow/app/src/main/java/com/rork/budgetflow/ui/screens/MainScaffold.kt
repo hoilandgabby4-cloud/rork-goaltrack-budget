@@ -74,14 +74,19 @@ private enum class Tab(val label: String, val icon: ImageVector) {
 private sealed interface ActiveSheet {
     data object Transaction : ActiveSheet
     data object Account : ActiveSheet
+    data class EditAccount(val account: com.rork.budgetflow.data.Account) : ActiveSheet
     data object AddCategory : ActiveSheet
     data class EditCategory(val category: Category) : ActiveSheet
     data object Goal : ActiveSheet
+    data class EditGoal(val goal: com.rork.budgetflow.data.SavingsGoal) : ActiveSheet
     data object Debt : ActiveSheet
+    data class EditDebt(val debt: com.rork.budgetflow.data.Debt) : ActiveSheet
     data class Contribute(val goalId: String) : ActiveSheet
     data class PayDebt(val debtId: String) : ActiveSheet
     data object Vehicle : ActiveSheet
+    data class EditVehicle(val vehicle: com.rork.budgetflow.data.Vehicle) : ActiveSheet
     data object BuyingPower : ActiveSheet
+    data class EditBuyingPower(val bp: com.rork.budgetflow.data.BuyingPower) : ActiveSheet
     data object EditHousehold : ActiveSheet
     data object AddCalendarEvent : ActiveSheet
     data class EditCalendarEvent(val event: com.rork.budgetflow.data.CalendarEvent) : ActiveSheet
@@ -125,6 +130,7 @@ fun MainScaffold() {
                 Tab.ACCOUNTS -> AccountsScreen(
                     vm = vm,
                     onAddAccount = { sheet = ActiveSheet.Account },
+                    onEditAccount = { sheet = ActiveSheet.EditAccount(it) },
                 )
                 Tab.TRENDS -> TrendsScreen(
                     vm = vm,
@@ -144,6 +150,10 @@ fun MainScaffold() {
                     onPayDebt = { sheet = ActiveSheet.PayDebt(it) },
                     onAddVehicle = { sheet = ActiveSheet.Vehicle },
                     onAddBuyingPower = { sheet = ActiveSheet.BuyingPower },
+                    onEditGoal = { sheet = ActiveSheet.EditGoal(it) },
+                    onEditDebt = { sheet = ActiveSheet.EditDebt(it) },
+                    onEditVehicle = { sheet = ActiveSheet.EditVehicle(it) },
+                    onEditBuyingPower = { sheet = ActiveSheet.EditBuyingPower(it) },
                 )
                 Tab.LEARN -> LearnScreen(
                     vm = vm,
@@ -173,10 +183,13 @@ fun MainScaffold() {
             when (active) {
                 ActiveSheet.Transaction -> AddTransactionSheet(vm, close)
                 ActiveSheet.Account -> AddAccountSheet(vm, close)
+                is ActiveSheet.EditAccount -> AddAccountSheet(vm, close, editAccount = active.account)
                 ActiveSheet.AddCategory -> AddCategorySheet(vm, close)
                 is ActiveSheet.EditCategory -> AddCategorySheet(vm, close, editCategory = active.category)
                 ActiveSheet.Goal -> AddGoalSheet(vm, close)
+                is ActiveSheet.EditGoal -> AddGoalSheet(vm, close, editGoal = active.goal)
                 ActiveSheet.Debt -> AddDebtSheet(vm, close)
+                is ActiveSheet.EditDebt -> AddDebtSheet(vm, close, editDebt = active.debt)
                 is ActiveSheet.Contribute -> MoveMoneySheet(
                     vm = vm,
                     title = "Add to goal",
@@ -192,7 +205,9 @@ fun MainScaffold() {
                     onDone = close,
                 )
                 ActiveSheet.Vehicle -> AddVehicleSheet(vm, close)
+                is ActiveSheet.EditVehicle -> AddVehicleSheet(vm, close, editVehicle = active.vehicle)
                 ActiveSheet.BuyingPower -> AddBuyingPowerSheet(vm, close)
+                is ActiveSheet.EditBuyingPower -> AddBuyingPowerSheet(vm, close, editBuyingPower = active.bp)
                 ActiveSheet.EditHousehold -> EditHouseholdSheet(vm, close)
                 ActiveSheet.AddCalendarEvent -> AddCalendarEventSheet(vm, close)
                 is ActiveSheet.EditCalendarEvent -> AddCalendarEventSheet(vm, close, editEvent = active.event)

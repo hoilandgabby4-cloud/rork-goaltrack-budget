@@ -58,6 +58,7 @@ import com.rork.budgetflow.ui.theme.TextTertiary
 fun AccountsScreen(
     vm: BudgetViewModel,
     onAddAccount: () -> Unit,
+    onEditAccount: (Account) -> Unit = {},
 ) {
     val data by vm.data.collectAsStateWithLifecycle()
 
@@ -84,7 +85,7 @@ fun AccountsScreen(
             )
         }
         items(data.accounts, key = { it.id }) { acc ->
-            AccountCard(acc, onLongDelete = { vm.deleteAccount(acc.id) })
+            AccountCard(acc, onClick = { onEditAccount(acc) })
         }
 
     }
@@ -107,7 +108,7 @@ private fun AddPill(onClick: () -> Unit) {
 }
 
 @Composable
-private fun AccountCard(account: Account, onLongDelete: () -> Unit) {
+private fun AccountCard(account: Account, onClick: () -> Unit) {
     val color = account.colorArgb.toColor()
     val isCredit = account.type == AccountType.CREDIT
     Box(
@@ -118,7 +119,7 @@ private fun AccountCard(account: Account, onLongDelete: () -> Unit) {
                 Brush.linearGradient(listOf(InkElevated, Ink))
             )
             .border(1.dp, color.copy(alpha = 0.20f), RoundedCornerShape(24.dp))
-            .androidClick(onLongDelete)
+            .androidClick(onClick)
             .padding(20.dp)
     ) {
         Column {
