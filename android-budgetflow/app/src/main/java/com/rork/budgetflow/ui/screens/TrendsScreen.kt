@@ -2,6 +2,7 @@ package com.rork.budgetflow.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -550,41 +551,45 @@ private fun CalendarTab(
                     }
                 }
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
 
-                // Day grid — 6 rows max
-                val totalCells = 42
+                // Day grid — 6 rows max, each cell is a uniform square
                 val rows = (offsetDays + daysInMonth + 6) / 7
 
-                for (row in 0 until rows) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        for (col in 0..6) {
-                            val idx = row * 7 + col
-                            val day = idx - offsetDays + 1
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    for (row in 0 until rows) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            for (col in 0..6) {
+                                val idx = row * 7 + col
+                                val day = idx - offsetDays + 1
 
-                            if (day in 1..daysInMonth) {
-                                val isToday = (year == Calendar.getInstance().get(Calendar.YEAR) &&
-                                    month == Calendar.getInstance().get(Calendar.MONTH) &&
-                                    day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH))
-                                val isSelected = day == selectedDay
-                                val dayEvents = eventsByDay[day] ?: emptyList()
+                                if (day in 1..daysInMonth) {
+                                    val isToday = (year == Calendar.getInstance().get(Calendar.YEAR) &&
+                                        month == Calendar.getInstance().get(Calendar.MONTH) &&
+                                        day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH))
+                                    val isSelected = day == selectedDay
+                                    val dayEvents = eventsByDay[day] ?: emptyList()
 
-                                DayCell(
-                                    day = day,
-                                    isToday = isToday,
-                                    isSelected = isSelected,
-                                    events = dayEvents,
-                                    onClick = { selectedDay = if (isSelected) null else day },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            } else {
-                                Spacer(Modifier.weight(1f))
+                                    DayCell(
+                                        day = day,
+                                        isToday = isToday,
+                                        isSelected = isSelected,
+                                        events = dayEvents,
+                                        onClick = { selectedDay = if (isSelected) null else day },
+                                        modifier = Modifier.weight(1f).aspectRatio(1f),
+                                    )
+                                } else {
+                                    Spacer(Modifier.weight(1f).aspectRatio(1f))
+                                }
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // Legend
                 Row(
@@ -712,64 +717,63 @@ private fun DayCell(
     val hasBill = events.any { it.type == CalendarEventType.BILL }
     val hasVacation = events.any { it.type == CalendarEventType.VACATION }
 
+    val bgColor = when {
+        isSelected -> Mint.copy(alpha = 0.3f)
+        isToday -> Mint.copy(alpha = 0.15f)
+        else -> InkSurface.copy(alpha = 0.6f)
+    }
+    val borderColor = when {
+        isSelected -> Mint.copy(alpha = 0.6f)
+        isToday -> Mint.copy(alpha = 0.35f)
+        else -> Hairline
+    }
+
     Box(
         modifier = modifier
-            .padding(1.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(
-                when {
-                    isSelected -> Mint.copy(alpha = 0.3f)
-                    isToday -> Mint.copy(alpha = 0.12f)
-                    else -> Color.Transparent
-                }
-            )
-            .androidClick(onClick)
-            .padding(vertical = 4.dp),
+            .background(bgColor)
+            .androidClick(onClick),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize(),
         ) {
             Text(
                 "$day",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = when {
                     isToday -> Mint
                     isSelected -> Mint
                     else -> MaterialTheme.colorScheme.onBackground
                 },
-                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Medium,
             )
-            // Reserve consistent space for event dots so all cells have the same height
-            Box(
-                modifier = Modifier
-                    .height(7.dp)
-                    .padding(top = 2.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (hasBill || hasVacation) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    ) {
-                        if (hasBill) {
-                            Box(
-                                modifier = Modifier
-                                    .size(5.dp)
-                                    .clip(CircleShape)
-                                    .background(Mint)
-                            )
-                        }
-                        if (hasVacation) {
-                            Box(
-                                modifier = Modifier
-                                    .size(5.dp)
-                                    .clip(CircleShape)
-                                    .background(Coral)
-                            )
-                        }
+            // Event dots — consistent space so all cells align
+            Spacer(Modifier.height(2.dp))
+            if (hasBill || hasVacation) {
+                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    if (hasBill) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(Mint)
+                        )
+                    }
+                    if (hasVacation) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(Coral)
+                        )
                     }
                 }
+            } else {
+                // Invisible spacer to keep cell height consistent
+                Spacer(Modifier.height(5.dp))
             }
         }
     }
