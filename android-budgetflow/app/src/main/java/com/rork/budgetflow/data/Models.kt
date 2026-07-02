@@ -129,6 +129,39 @@ data class HouseholdProfile(
     val hasDependents: Boolean get() = childCount > 0 || petCount > 0
 }
 
+/** Type of calendar event — a recurring bill or a one-time vacation. */
+@Serializable
+enum class CalendarEventType {
+    BILL,
+    VACATION;
+
+    val label: String
+        get() = when (this) {
+            BILL -> "Bill"
+            VACATION -> "Vacation"
+        }
+}
+
+/**
+ * A calendar event for tracking recurring bills or vacation dates.
+ * For recurring bills, [dayOfMonth] determines which day each month,
+ * and [startTimestamp] is the first occurrence. For vacations,
+ * [startTimestamp] and [endTimestamp] define the date range.
+ */
+@Serializable
+data class CalendarEvent(
+    val id: String,
+    val title: String,
+    val type: CalendarEventType,
+    val dayOfMonth: Int,
+    val startTimestamp: Long,
+    val endTimestamp: Long? = null,
+    val amount: Double = 0.0,
+    val categoryId: String? = null,
+    val colorArgb: Long = 0xFFF5C451,
+    val notes: String = "",
+)
+
 /** The full persisted application state. */
 @Serializable
 data class BudgetData(
@@ -139,6 +172,7 @@ data class BudgetData(
     val debts: List<Debt> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val buyingPowers: List<BuyingPower> = emptyList(),
+    val calendarEvents: List<CalendarEvent> = emptyList(),
     val household: HouseholdProfile = HouseholdProfile(),
     val onboarded: Boolean = false,
 )

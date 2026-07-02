@@ -75,6 +75,24 @@ class BudgetRepository(context: Context) {
             BuyingPower(uuid(), BuyingPowerType.HOME, 280000.0, 1680.0, AccentPalette[0].toArgb().toLong()),
         )
 
+        // Seed calendar events: recurring bills + upcoming vacation
+        val cal = java.util.Calendar.getInstance()
+        val thisMonth = cal.get(java.util.Calendar.MONTH)
+        val thisYear = cal.get(java.util.Calendar.YEAR)
+        fun dayTimestamp(day: Int, monthOffset: Int = 0): Long {
+            val c = java.util.Calendar.getInstance()
+            c.set(thisYear, thisMonth + monthOffset, day, 10, 0, 0)
+            c.set(java.util.Calendar.MILLISECOND, 0)
+            return c.timeInMillis
+        }
+        val calendarEvents = listOf(
+            com.rork.budgetflow.data.CalendarEvent(uuid(), "Rent Due", com.rork.budgetflow.data.CalendarEventType.BILL, 1, dayTimestamp(1), null, 1200.0, housing.id, AccentPalette[2].toArgb().toLong(), "Monthly apartment rent"),
+            com.rork.budgetflow.data.CalendarEvent(uuid(), "Electric Bill", com.rork.budgetflow.data.CalendarEventType.BILL, 15, dayTimestamp(15), null, 92.10, bills.id, AccentPalette[4].toArgb().toLong(), "Monthly electric utility"),
+            com.rork.budgetflow.data.CalendarEvent(uuid(), "Internet Bill", com.rork.budgetflow.data.CalendarEventType.BILL, 20, dayTimestamp(20), null, 79.99, bills.id, AccentPalette[4].toArgb().toLong(), "Monthly internet service"),
+            com.rork.budgetflow.data.CalendarEvent(uuid(), "Car Insurance", com.rork.budgetflow.data.CalendarEventType.BILL, 10, dayTimestamp(10), null, 135.00, car.id, AccentPalette[1].toArgb().toLong(), "Auto insurance premium"),
+            com.rork.budgetflow.data.CalendarEvent(uuid(), "Summer Beach Trip", com.rork.budgetflow.data.CalendarEventType.VACATION, 4, dayTimestamp(4, 1), dayTimestamp(8, 1), 0.0, null, AccentPalette[3].toArgb().toLong(), "Family vacation to the coast"),
+        )
+
         return BudgetData(
             accounts = listOf(checking, savingsAcct, visa, cash, retirement),
             categories = listOf(housing, bills, car, groceries, shopping, savingsCat),
@@ -83,6 +101,7 @@ class BudgetRepository(context: Context) {
             debts = debts,
             vehicles = vehicles,
             buyingPowers = buyingPowers,
+            calendarEvents = calendarEvents,
             onboarded = false,
         )
     }

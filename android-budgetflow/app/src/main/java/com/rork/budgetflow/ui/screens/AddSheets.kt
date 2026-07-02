@@ -627,6 +627,198 @@ fun AddBuyingPowerSheet(vm: BudgetViewModel, onDone: () -> Unit) {
     }
 }
 
+// --- Calendar event ---------------------------------------------------------
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun AddCalendarEventSheet(
+    vm: BudgetViewModel,
+    onDone: () -> Unit,
+    editEvent: com.rork.budgetflow.data.CalendarEvent? = null,
+) {
+    val data by vm.data.collectAsStateWithLifecycle()
+    val isEdit = editEvent != null
+
+    val cal = Calendar.getInstance()
+    var title by remember { mutableStateOf(editEvent?.title ?: "") }
+    var eventType by remember { mutableStateOf(editEvent?.type ?: com.rork.budgetflow.data.CalendarEventType.BILL) }
+    var dayOfMonth by remember { mutableStateOf(if (editEvent != null) editEvent.dayOfMonth.toString() else "1") }
+    var amount by remember { mutableStateOf(if (editEvent != null && editEvent.amount > 0) Money.formatNoComma(editEvent.amount) else "") }
+    var notes by remember { mutableStateOf(editEvent?.notes ?: "") }
+    var categoryId by remember { mutableStateOf(editEvent?.categoryId) }
+    var colorIndex by remember {
+        mutableStateOf(
+            AccentPalette.indexOfFirst {
+                it.toLongArgb() == (editEvent?.colorArgb ?: AccentPalette[2].toLongArgb())
+            }.coerceAtLeast(0)
+        )
+    }
+
+    // For vacations: month/year pickers (simplified to current month by default)
+    val startMonth = if (editEvent != null) {
+        cal.timeInMillis = editEvent.startTimestamp
+        cal.get(Calendar.DAY_OF_MONTH)
+    } else cal.get(Calendar.DAY_OF_MONTH)
+    var startDay by remember { mutableStateOf(startMonth.toString()) }
+    var durationDays by remember {
+        mutableStateOf(
+            if (editEvent != null && editEvent.endTimestamp != null) {
+                val diff = editEvent.endTimestamp!! - editEvent.startTimestamp
+                (diff / 86400000L).toInt().coerceAtLeast(1).toString()
+            } else "3"
+        )
+    }
+
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+        SheetTitle(if (isEdit) "Edit event" else "New calendar event")
+
+        // Type toggle
+        FieldLabel("Type")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(com.rork.budgetflow.ui.theme.InkSurface)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            ToggleHalf("Bill", eventType == com.rork.budgetflow.data.CalendarEventType.BILL, Mint, Modifier.weight(1f)) {
+                eventType = com.rork.budgetflow.data.CalendarEventType.BILL
+            }
+            ToggleHalf("Vacation", eventType == com.rork.budgetflow.data.CalendarEventType.VACATION, Coral, Modifier.weight(1f)) {
+                eventType = com.rork.budgetflow.data.CalendarEventType.VACATION
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+
+        LabeledField("Title", title, { title = it }, placeholder = if (eventType == com.rork.budgetflow.data.CalendarEventType.BILL) "e.g. Rent" else "e.g. Beach Trip")
+        Spacer(Modifier.height(16.dp))
+
+        if (eventType == com.rork.budgetflow.data.CalendarEventType.BILL) {
+            // Day of month for recurring bills
+            LabeledField(
+                label = "Day of month",
+                value = dayOfMonth,
+                onValueChange = { dayOfMonth = it.filter { c -> c.isDigit() }.take(2) },
+                placeholder = "1–31",
+                keyboardType = KeyboardType.Number,
+            )
+            Spacer(Modifier.height(16.dp))
+
+            LabeledField(
+                label = "Amount",
+                value = amount,
+                onValueChange = { amount = it.filter { c -> c.isDigit() || c == '.' } },
+                placeholder = "0.00",
+                keyboardType = KeyboardType.Decimal,
+                prefix = "$",
+            )
+            Spacer(Modifier.height(16.dp))
+
+            FieldLabel("Linked category (optional)")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                data.categories.forEach { cat ->
+                    SelectChip(
+                        label = cat.name,
+                        selected = cat.id == categoryId,
+                        accent = cat.colorArgb.toColor(),
+                        onClick = { categoryId = if (cat.id == categoryId) null else cat.id },
+                    )
+                }
+            }
+        } else {
+            // Vacation date range
+            LabeledField(
+                label = "Start day of month",
+                value = startDay,
+                onValueChange = { startDay = it.filter { c -> c.isDigit() }.take(2) },
+                placeholder = "1–31",
+                keyboardType = KeyboardType.Number,
+            )
+            Spacer(Modifier.height(16.dp))
+
+            LabeledField(
+                label = "Number of days",
+                value = durationDays,
+                onValueChange = { durationDays = it.filter { c -> c.isDigit() }.take(3) },
+                placeholder = "e.g. 3",
+                keyboardType = KeyboardType.Number,
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        LabeledField(
+            label = "Notes (optional)",
+            value = notes,
+            onValueChange = { notes = it },
+            placeholder = "e.g. Includes tax"
+        )
+        Spacer(Modifier.height(16.dp))
+
+        FieldLabel("Color")
+        ColorRow(colorIndex) { colorIndex = it }
+        Spacer(Modifier.height(24.dp))
+
+        val dayNum = dayOfMonth.toIntOrNull() ?: 1
+        val startDayNum = startDay.toIntOrNull() ?: 1
+        val valid = title.isNotBlank() && (eventType != com.rork.budgetflow.data.CalendarEventType.BILL || dayNum in 1..31)
+
+        PrimaryButton(if (isEdit) "Save changes" else "Add event", enabled = valid) {
+            val now = Calendar.getInstance()
+            fun makeTimestamp(day: Int): Long {
+                val c = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, day.coerceIn(1, 28))
+                    set(Calendar.HOUR_OF_DAY, 10)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                return c.timeInMillis
+            }
+
+            val startTs = if (eventType == com.rork.budgetflow.data.CalendarEventType.BILL) {
+                makeTimestamp(dayNum)
+            } else {
+                makeTimestamp(startDayNum)
+            }
+            val endTs = if (eventType == com.rork.budgetflow.data.CalendarEventType.VACATION) {
+                val dur = durationDays.toIntOrNull()?.coerceAtLeast(1) ?: 3
+                startTs + (dur - 1).toLong() * 86400000L
+            } else null
+
+            if (isEdit) {
+                vm.updateCalendarEvent(
+                    id = editEvent!!.id,
+                    title = title,
+                    type = eventType,
+                    dayOfMonth = if (eventType == com.rork.budgetflow.data.CalendarEventType.BILL) dayNum else startDayNum,
+                    startTimestamp = startTs,
+                    endTimestamp = endTs,
+                    amount = parseAmount(amount),
+                    categoryId = categoryId,
+                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
+                    notes = notes,
+                )
+            } else {
+                vm.addCalendarEvent(
+                    title = title,
+                    type = eventType,
+                    dayOfMonth = if (eventType == com.rork.budgetflow.data.CalendarEventType.BILL) dayNum else startDayNum,
+                    startTimestamp = startTs,
+                    endTimestamp = endTs,
+                    amount = parseAmount(amount),
+                    categoryId = categoryId,
+                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
+                    notes = notes,
+                )
+            }
+            onDone()
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
 // --- Household editing -------------------------------------------------------
 
 @Composable

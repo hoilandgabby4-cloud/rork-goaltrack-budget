@@ -196,6 +196,107 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         update { d -> d.copy(categories = d.categories.filterNot { it.id == id }) }
     }
 
+    // --- Calendar Events ----------------------------------------------------
+
+    fun addCalendarEvent(
+        title: String,
+        type: com.rork.budgetflow.data.CalendarEventType,
+        dayOfMonth: Int,
+        startTimestamp: Long,
+        endTimestamp: Long?,
+        amount: Double,
+        categoryId: String?,
+        colorArgb: Long,
+        notes: String,
+    ) {
+        update { d ->
+            d.copy(
+                calendarEvents = d.calendarEvents + com.rork.budgetflow.data.CalendarEvent(
+                    id = uuid(),
+                    title = title.trim().ifBlank { type.label },
+                    type = type,
+                    dayOfMonth = dayOfMonth,
+                    startTimestamp = startTimestamp,
+                    endTimestamp = endTimestamp,
+                    amount = amount,
+                    categoryId = categoryId,
+                    colorArgb = colorArgb,
+                    notes = notes.trim(),
+                )
+            )
+        }
+    }
+
+    fun updateCalendarEvent(
+        id: String,
+        title: String,
+        type: com.rork.budgetflow.data.CalendarEventType,
+        dayOfMonth: Int,
+        startTimestamp: Long,
+        endTimestamp: Long?,
+        amount: Double,
+        categoryId: String?,
+        colorArgb: Long,
+        notes: String,
+    ) {
+        update { d ->
+            d.copy(calendarEvents = d.calendarEvents.map {
+                if (it.id == id) it.copy(
+                    title = title.trim().ifBlank { type.label },
+                    type = type,
+                    dayOfMonth = dayOfMonth,
+                    startTimestamp = startTimestamp,
+                    endTimestamp = endTimestamp,
+                    amount = amount,
+                    categoryId = categoryId,
+                    colorArgb = colorArgb,
+                    notes = notes.trim(),
+                ) else it
+            })
+        }
+    }
+
+    fun deleteCalendarEvent(id: String) {
+        update { d -> d.copy(calendarEvents = d.calendarEvents.filterNot { it.id == id }) }
+    }
+
+    /**
+     * Returns all calendar events that fall within the given month/year.
+     * Recurring bills appear on every [dayOfMonth]. Vacations appear if they
+     * overlap the month in any way.
+     */
+    fun eventsForMonth(year: Int, month: Int): List<com.rork.budgetflow.data.CalendarEvent> {
+        val cal = java.util.Calendar.getInstance()
+        return _data.value.calendarEvents.filter { event ->
+            when (event.type) {
+                com.rork.budgetflow.data.CalendarEventType.BILL -> {
+                    // Recurring bill: valid if startTimestamp is on or before this month,
+                    // and dayOfMonth is valid for this month
+                    cal.timeInMillis = event.startTimestamp
+                    val startYear = cal.get(java.util.Calendar.YEAR)
+                    val startMonth = cal.get(java.util.Calendar.MONTH)
+                    (startYear < year || (startYear == year && startMonth <= month)) &&
+                        event.dayOfMonth in 1..31
+                }
+                com.rork.budgetflow.data.CalendarEventType.VACATION -> {
+                    // One-time vacation: check if the date range overlaps this month
+                    val monthStart = java.util.Calendar.getInstance().apply {
+                        set(year, month, 1, 0, 0, 0)
+                        set(java.util.Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    val monthEnd = java.util.Calendar.getInstance().apply {
+                        set(year, month, 1, 0, 0, 0)
+                        set(java.util.Calendar.MILLISECOND, 0)
+                        add(java.util.Calendar.MONTH, 1)
+                        add(java.util.Calendar.MILLISECOND, -1)
+                    }.timeInMillis
+                    val vacEnd = event.endTimestamp ?: event.startTimestamp
+                    event.startTimestamp <= monthEnd && vacEnd >= monthStart
+                }
+            }
+        }
+    }
+
     // --- Goals ---------------------------------------------------------------
 
     fun addGoal(name: String, target: Double, colorArgb: Long, iconKey: String) {

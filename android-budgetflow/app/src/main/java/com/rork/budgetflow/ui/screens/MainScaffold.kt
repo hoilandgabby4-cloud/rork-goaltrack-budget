@@ -83,6 +83,8 @@ private sealed interface ActiveSheet {
     data object Vehicle : ActiveSheet
     data object BuyingPower : ActiveSheet
     data object EditHousehold : ActiveSheet
+    data object AddCalendarEvent : ActiveSheet
+    data class EditCalendarEvent(val event: com.rork.budgetflow.data.CalendarEvent) : ActiveSheet
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,6 +131,9 @@ fun MainScaffold() {
                     onAddCategory = { sheet = ActiveSheet.AddCategory },
                     onEditCategory = { sheet = ActiveSheet.EditCategory(it) },
                     onDeleteCategory = { vm.deleteCategory(it) },
+                    onAddCalendarEvent = { sheet = ActiveSheet.AddCalendarEvent },
+                    onEditCalendarEvent = { sheet = ActiveSheet.EditCalendarEvent(it) },
+                    onDeleteCalendarEvent = { vm.deleteCalendarEvent(it) },
                 )
                 Tab.ACTIVITY -> ActivityScreen(vm = vm)
                 Tab.GOALS -> GoalsScreen(
@@ -189,6 +194,8 @@ fun MainScaffold() {
                 ActiveSheet.Vehicle -> AddVehicleSheet(vm, close)
                 ActiveSheet.BuyingPower -> AddBuyingPowerSheet(vm, close)
                 ActiveSheet.EditHousehold -> EditHouseholdSheet(vm, close)
+                ActiveSheet.AddCalendarEvent -> AddCalendarEventSheet(vm, close)
+                is ActiveSheet.EditCalendarEvent -> AddCalendarEventSheet(vm, close, editEvent = active.event)
             }
         }
     }
