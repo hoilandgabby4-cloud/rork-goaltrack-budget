@@ -246,7 +246,7 @@ fun LearnScreen(
 
         // --- App Help / Usage Guide ---
         SectionHeading(
-            title = "How to use BudgetFlow",
+            title = "How to use Financial GPS",
             subtitle = "A guided tour of every tab in the app",
             icon = Icons.Rounded.HelpOutline,
             color = Sky,
