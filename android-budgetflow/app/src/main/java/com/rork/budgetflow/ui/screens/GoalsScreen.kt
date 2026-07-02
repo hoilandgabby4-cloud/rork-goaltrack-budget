@@ -18,11 +18,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -166,18 +171,14 @@ fun GoalsScreen(
                     BuyingPowerCard(bp, modifier = Modifier.fillMaxWidth())
                 }
 
+                // Expandable section for other buying power items
                 item {
-                    val customBps = data.buyingPowers
-                    if (customBps.isNotEmpty()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            customBps.forEach { bp ->
-                                BuyingPowerCard(bp, onLongDelete = { vm.deleteBuyingPower(bp.id) })
-                            }
-                        }
-                    }
+                    OtherBuyingPowerSection(
+                        customBps = data.buyingPowers,
+                        onDelete = { vm.deleteBuyingPower(it.id) },
+                        onAdd = onAddBuyingPower,
+                    )
                 }
-
-                item { AddRow("Custom buying power", onAddBuyingPower) }
             }
         }
     }
@@ -502,6 +503,73 @@ private fun VehicleCard(vehicle: Vehicle, vm: BudgetViewModel, onLongDelete: () 
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                     color = TextTertiary,
                 )
+            }
+        }
+    }
+}
+
+// --- Other Buying Power (expandable) ----------------------------------------
+
+@Composable
+private fun OtherBuyingPowerSection(
+    customBps: List<BuyingPower>,
+    onDelete: (BuyingPower) -> Unit,
+    onAdd: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        // Collapsed: tappable row to expand
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(InkElevated)
+                .androidClick { expanded = !expanded }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Check buying power on other items",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "Motorcycles, boats, RVs, and more",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextTertiary,
+                )
+            }
+            Icon(
+                if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                contentDescription = if (expanded) "Collapse" else "Expand",
+                tint = TextSecondary,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+
+        // Expanded: custom buying power cards + add button
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Spacer(Modifier.height(2.dp))
+
+                if (customBps.isNotEmpty()) {
+                    customBps.forEach { bp ->
+                        BuyingPowerCard(
+                            bp,
+                            modifier = Modifier.fillMaxWidth(),
+                            onLongDelete = { onDelete(bp) },
+                        )
+                    }
+                }
+
+                AddRow("Add custom buying power", onAdd)
             }
         }
     }
