@@ -29,8 +29,15 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Forest
+import androidx.compose.material.icons.rounded.Grass
 import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.BakeryDining
+import androidx.compose.material.icons.rounded.Egg
+import androidx.compose.material.icons.rounded.LocalDining
+import androidx.compose.material.icons.rounded.LocalGroceryStore
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.SetMeal
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Palette
@@ -423,6 +430,19 @@ fun LearnScreen(
         Spacer(Modifier.height(12.dp))
 
         FreeActivitiesSection()
+
+        Spacer(Modifier.height(20.dp))
+
+        // --- Low-Cost Healthy Food ---
+        SectionHeading(
+            title = "Low-cost healthy food",
+            subtitle = "A grocery list you can take shopping",
+            icon = Icons.Rounded.LocalGroceryStore,
+            color = MintDeep,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        HealthyFoodSection()
 
         Spacer(Modifier.height(20.dp))
 
@@ -904,6 +924,415 @@ private data class ActivityGroup(
     val accentColor: Color,
     val activities: List<String>,
 )
+
+private data class FoodCategory(
+    val icon: ImageVector,
+    val title: String,
+    val accentColor: Color,
+    val items: List<String>,
+    val estimatedCost: String,
+)
+
+@Composable
+private fun HealthyFoodSection() {
+    val categories = remember {
+        listOf(
+            FoodCategory(
+                icon = Icons.Rounded.SetMeal,
+                title = "Proteins",
+                accentColor = Coral,
+                estimatedCost = "~\$0.15-0.50 / serving",
+                items = listOf(
+                    "Dried lentils — ~$1.50/lb, 11g protein per serving, cooks in 20 min",
+                    "Dried beans (black, pinto, kidney) — ~$1.30/lb, 7g protein per serving",
+                    "Split peas — ~$1.20/lb, great for hearty soups",
+                    "Canned tuna — ~$0.75/can, 20g protein, stock up on sales",
+                    "Canned chicken — ~$2.50/can, versatile for sandwiches and salads",
+                    "Eggs — ~$2.50/dozen, 6g protein each, one of the cheapest proteins",
+                    "Whole chicken — ~$1.50/lb, roast it for multiple meals, make stock from bones",
+                    "Chicken thighs (bone-in) — ~$1.80/lb, cheaper and juicier than breasts",
+                    "Ground turkey — ~$3.50/lb, leaner than beef and often cheaper",
+                    "Peanut butter — ~$2.50/jar, 8g protein per 2 tbsp, no-stir preferred",
+                    "Cottage cheese — ~$3.00/tub, 14g protein per half cup",
+                    "Greek yogurt (plain, large tub) — ~$4.00/32oz, 15-20g protein per cup",
+                    "Tofu (firm) — ~$2.00/block, 10g protein per serving",
+                    "Sardines — ~$2.00/tin, packed with omega-3s and protein",
+                ),
+            ),
+            FoodCategory(
+                icon = Icons.Rounded.Restaurant,
+                title = "Grains & starches",
+                accentColor = Gold,
+                estimatedCost = "~\$0.05-0.30 / serving",
+                items = listOf(
+                    "Brown rice — ~$1.50/lb, filling and fiber-rich, batch cook and freeze",
+                    "White rice — ~$1.00/lb, cheapest staple calorie, pairs with anything",
+                    "Rolled oats — ~$1.00/lb, 30+ servings per bag, breakfast or baking",
+                    "Whole wheat pasta — ~$1.50/box, more fiber than white",
+                    "Bulgur wheat — ~$2.00/lb, cooks fast, great in tabbouleh and pilafs",
+                    "Pearl barley — ~$1.50/lb, hearty addition to soups and stews",
+                    "Potatoes (russet) — ~$0.60/lb, vitamin C, potassium, very filling",
+                    "Sweet potatoes — ~$0.90/lb, rich in vitamin A, versatile",
+                    "Cornmeal / polenta — ~$1.00/lb, creamy side dish or baked into bread",
+                    "Whole wheat flour — ~$2.50/5lb, bake your own bread or tortillas",
+                    "Popcorn kernels — ~$1.50/lb, cheap whole-grain snack, air-pop for healthiest",
+                ),
+            ),
+            FoodCategory(
+                icon = Icons.Rounded.Grass,
+                title = "Fruits & vegetables",
+                accentColor = Mint,
+                estimatedCost = "~\$0.30-1.00 / serving",
+                items = listOf(
+                    "Bananas — ~$0.30/lb, cheapest fresh fruit, great for smoothies and snacks",
+                    "Apples (in season) — ~$1.20/lb, buy bags for savings",
+                    "Oranges — ~$0.70/lb, vitamin C powerhouse",
+                    "Cabbage — ~$0.40/lb, lasts weeks, shred for slaw or stir-fry",
+                    "Carrots — ~$0.80/lb, or ~$1.50 for a 2lb bag, lasts a month",
+                    "Onions — ~$0.60/lb, flavor base for almost every dish",
+                    "Garlic — ~$3.00/lb, a little goes a long way",
+                    "Potatoes — also here! Cheap, filling, nutrient-dense",
+                    "Sweet potatoes — versatile and affordable",
+                    "Frozen mixed vegetables — ~$1.50/bag, just as nutritious as fresh, no waste",
+                    "Frozen spinach — ~$1.50/box, add to eggs, soups, smoothies",
+                    "Frozen berries — ~$3.00/bag, cheaper than fresh for smoothies and oatmeal",
+                    "Roma tomatoes — ~$1.00/lb, cheapest tomato variety",
+                    "Kale or collard greens — ~$1.50/bunch, nutrient-dense and cheap",
+                    "Celery — ~$1.50/bunch, lasts weeks, snacks and soup base",
+                    "Seasonal produce — check farmers market end-of-day for deals",
+                ),
+            ),
+            FoodCategory(
+                icon = Icons.Rounded.LocalDining,
+                title = "Dairy & eggs",
+                accentColor = Sky,
+                estimatedCost = "~\$0.20-0.60 / serving",
+                items = listOf(
+                    "Eggs — listed in proteins, but a dairy-section staple too",
+                    "Milk (gallon) — ~$3.00, cheapest calcium source",
+                    "Plain yogurt (large tub) — ~$3.00, cheaper and healthier than individual cups",
+                    "Greek yogurt (plain) — ~$4.00/32oz, high protein, use in place of sour cream",
+                    "Cottage cheese — ~$3.00/tub, high protein snack or breakfast",
+                    "Block cheese (cheddar, mozzarella) — ~$4.00/lb, shred yourself — pre-shredded costs 2x",
+                    "Parmesan (wedge) — ~$8.00/lb but a little lasts months",
+                    "Butter — ~$4.00/lb, cook and bake with it",
+                    "Powdered milk — ~$10.00/box, shelf-stable backup for baking and cooking",
+                ),
+            ),
+            FoodCategory(
+                icon = Icons.Rounded.Egg,
+                title = "Pantry staples & legumes",
+                accentColor = Violet,
+                estimatedCost = "~\$0.02-0.50 / serving",
+                items = listOf(
+                    "Dried lentils — already in proteins, but a pantry hero",
+                    "Dried beans — soak overnight, cook a big batch, freeze portions",
+                    "Chickpeas (dried) — ~$1.50/lb, hummus, roasts, curries",
+                    "Canned beans (any) — ~$0.80/can, convenient when you can't soak",
+                    "Canned diced tomatoes — ~$1.00/can, soup, sauce, chili base",
+                    "Canned tomato paste — ~$0.60/can, flavor booster for sauces",
+                    "Olive oil — ~$8.00/bottle, use sparingly, lasts months",
+                    "Canola or vegetable oil — ~$3.00/bottle, budget cooking oil",
+                    "Vinegar (apple cider or white) — ~$2.00/bottle, salad dressing and cooking",
+                    "Salt & pepper — buy in bulk, lasts forever",
+                    "Cumin, paprika, garlic powder, chili powder — ~$2 each, build flavor cheaply",
+                    "Chicken or vegetable bouillon — ~$3.00/jar, instant broth for soups",
+                    "Canned corn — ~$0.80/can, add to soups, salsas, salads",
+                    "Raisins or dried cranberries — ~$3.00/bag, snack or oatmeal topping",
+                    "Pasta sauce (jar, basic) — ~$2.00/jar, or make your own from canned tomatoes",
+                ),
+            ),
+            FoodCategory(
+                icon = Icons.Rounded.Restaurant,
+                title = "Frozen & bulk buys",
+                accentColor = MintDeep,
+                estimatedCost = "Best value per serving",
+                items = listOf(
+                    "Frozen chicken breasts (bulk bag) — ~$2.50/lb, cheaper than fresh",
+                    "Frozen tilapia or cod — ~$4.00/lb, affordable fish option",
+                    "Frozen mixed vegetables — ~$1.50/bag, perfect for stir-fries and soups",
+                    "Frozen fruit (for smoothies) — ~$3.00/bag, cheaper than fresh out of season",
+                    "Frozen peas — ~$1.50/bag, add protein and color to any dish",
+                    "Frozen spinach — ~$1.50/box, sneaky nutrition booster",
+                    "Frozen edamame — ~$3.00/bag, cheap protein snack",
+                    "Rice (10-20lb bag) — ~$10-18, lowest cost per serving",
+                    "Dried beans (bulk) — ~$1.00/lb in bulk bins, cheapest protein",
+                    "Oats (bulk) — ~$0.80/lb, breakfast for pennies",
+                    "Flour (bulk) — ~$2.00/5lb, bake bread to save even more",
+                    "Peanut butter (large jar) — ~$5.00/28oz, cheapest per-ounce protein",
+                ),
+            ),
+        )
+    }
+
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Main clickable card
+        GlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = !isExpanded },
+        ) {
+            Column(Modifier.padding(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(MintDeep.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Rounded.LocalGroceryStore,
+                            contentDescription = null,
+                            tint = MintDeep,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Low-cost healthy grocery list",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "Tap to expand the full shopping list",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextTertiary,
+                        )
+                    }
+                    Icon(
+                        if (isExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = TextTertiary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                if (!isExpanded) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Eating healthy on a budget is absolutely possible. This list covers proteins, grains, produce, dairy, and pantry staples — most cost under \$1 per serving. Use it as your shopping guide and build meals around what's on sale.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.4f,
+                    )
+                }
+            }
+        }
+
+        // Expanded grocery list
+        AnimatedVisibility(visible = isExpanded) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Shopping tips card
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Rounded.Lightbulb,
+                                contentDescription = null,
+                                tint = Gold,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Smart shopping tips",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        val tips = listOf(
+                            "Shop the perimeter — fresh produce, dairy, and proteins are usually on the outer aisles",
+                            "Buy in bulk for staples like rice, beans, and oats — lowest cost per serving",
+                            "Frozen fruits and vegetables are just as nutritious as fresh and won't spoil",
+                            "Compare unit prices (price per lb/oz), not package prices",
+                            "Plan meals around what's on sale each week",
+                            "Cook once, eat twice — batch cook beans, rice, and proteins to save time and money",
+                            "Shop seasonal produce for the best prices and flavor",
+                            "Never shop hungry — you'll buy 23% more on average",
+                        )
+                        tips.forEach { tip ->
+                            Row(
+                                modifier = Modifier.padding(vertical = 3.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 6.dp)
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(Gold.copy(alpha = 0.6f)),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    tip,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary,
+                                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.4f,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Category cards
+                categories.forEachIndexed { index, category ->
+                    var categoryExpanded by remember { mutableStateOf(index == 0) }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                if (categoryExpanded) category.accentColor.copy(alpha = 0.08f) else InkElevated
+                            )
+                            .animateContentSize()
+                            .clickable { categoryExpanded = !categoryExpanded },
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(category.accentColor.copy(alpha = 0.14f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        category.icon,
+                                        contentDescription = null,
+                                        tint = category.accentColor,
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        category.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = TextPrimary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        category.estimatedCost,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextTertiary,
+                                    )
+                                }
+                                Icon(
+                                    if (categoryExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                    contentDescription = if (categoryExpanded) "Collapse" else "Expand",
+                                    tint = TextTertiary,
+                                    modifier = Modifier.size(22.dp),
+                                )
+                            }
+
+                            if (categoryExpanded) {
+                                Spacer(Modifier.height(14.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(category.accentColor.copy(alpha = 0.12f)),
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                category.items.forEach { item ->
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.Top,
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 7.dp)
+                                                .size(7.dp)
+                                                .clip(CircleShape)
+                                                .background(category.accentColor.copy(alpha = 0.6f)),
+                                        )
+                                        Spacer(Modifier.width(10.dp))
+                                        Text(
+                                            item,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextSecondary,
+                                            lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.45f,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Budget meal ideas card
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Rounded.Restaurant,
+                                contentDescription = null,
+                                tint = Mint,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Budget meal ideas from this list",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        val meals = listOf(
+                            "Lentil soup with carrots, onions, and spices — under \$1.50 for 4 servings",
+                            "Rice and beans with salsa — complete protein, under \$0.75/serving",
+                            "Oatmeal with bananas and peanut butter — under \$0.40/bowl",
+                            "Egg fried rice with frozen mixed veg — under \$1.00/serving",
+                            "Black bean tacos with cabbage slaw — under \$1.50 for 3 tacos",
+                            "Pasta with canned tomatoes, garlic, and olive oil — under \$1.00/serving",
+                            "Baked potato with cottage cheese and steamed broccoli — under \$1.20",
+                            "Greek yogurt with frozen berries and oats — under \$0.80/bowl",
+                            "Tuna salad on whole wheat toast — under \$1.50 for 2 sandwiches",
+                            "Chickpea curry with rice — under \$1.00/serving, makes 4-6 servings",
+                        )
+                        meals.forEach { meal ->
+                            Row(
+                                modifier = Modifier.padding(vertical = 3.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 6.dp)
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(Mint.copy(alpha = 0.6f)),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    meal,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary,
+                                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.4f,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun FreeActivitiesSection() {
