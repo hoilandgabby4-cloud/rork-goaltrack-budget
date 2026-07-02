@@ -93,6 +93,12 @@ fun AddTransactionSheet(vm: BudgetViewModel, onDone: () -> Unit) {
     var amount by remember { mutableStateOf("") }
     var accountId by remember { mutableStateOf(data.accounts.firstOrNull()?.id) }
     var categoryId by remember { mutableStateOf<String?>(data.categories.firstOrNull()?.id) }
+    var addToCalendar by remember { mutableStateOf(false) }
+    var billDayOfMonth by remember { mutableStateOf(Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString()) }
+
+    val selectedCategory = data.categories.firstOrNull { it.id == categoryId }
+    val isBillCategory = selectedCategory?.name?.contains("bill", ignoreCase = true) == true ||
+        selectedCategory?.name?.contains("monthly", ignoreCase = true) == true
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
         SheetTitle(if (isIncome) "Add income" else "Add expense")
@@ -150,6 +156,36 @@ fun AddTransactionSheet(vm: BudgetViewModel, onDone: () -> Unit) {
                     )
                 }
             }
+
+            // Calendar option for bill categories
+            if (isBillCategory) {
+                Spacer(Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(if (addToCalendar) Mint else Hairline)
+                            .androidClick { addToCalendar = !addToCalendar },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (addToCalendar) Icon(Icons.Rounded.Check, null, tint = OnMint, modifier = Modifier.size(14.dp))
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text("Add to calendar as repeating bill", style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                }
+
+                if (addToCalendar) {
+                    Spacer(Modifier.height(12.dp))
+                    LabeledField(
+                        label = "Day of month due",
+                        value = billDayOfMonth,
+                        onValueChange = { billDayOfMonth = it.filter { c -> c.isDigit() }.take(2) },
+                        placeholder = "1–31",
+                        keyboardType = KeyboardType.Number,
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -162,6 +198,27 @@ fun AddTransactionSheet(vm: BudgetViewModel, onDone: () -> Unit) {
                 categoryId = categoryId,
                 isIncome = isIncome,
             )
+            if (addToCalendar && isBillCategory && !isIncome) {
+                val dayNum = billDayOfMonth.toIntOrNull()?.coerceIn(1, 31) ?: Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+                val c = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, dayNum.coerceIn(1, 28))
+                    set(Calendar.HOUR_OF_DAY, 10)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                vm.addCalendarEvent(
+                    title = title.ifBlank { selectedCategory?.name ?: "Bill" },
+                    type = com.rork.budgetflow.data.CalendarEventType.BILL,
+                    dayOfMonth = dayNum,
+                    startTimestamp = c.timeInMillis,
+                    endTimestamp = null,
+                    amount = parseAmount(amount),
+                    categoryId = categoryId,
+                    colorArgb = selectedCategory?.colorArgb ?: AccentPalette[4].toLongArgb(),
+                    notes = "Auto-added from ${selectedCategory?.name ?: "bill"} transaction",
+                )
+            }
             onDone()
         }
         Spacer(Modifier.height(8.dp))
