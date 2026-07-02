@@ -889,6 +889,7 @@ fun EditHouseholdSheet(vm: BudgetViewModel, onDone: () -> Unit) {
     var adultCount by remember { mutableStateOf(hh.adultCount) }
     var childCount by remember { mutableStateOf(hh.childCount) }
     var petCount by remember { mutableStateOf(hh.petCount) }
+    var ageText by remember { mutableStateOf(if (hh.userAge > 0) hh.userAge.toString() else "") }
     var incomeText by remember { mutableStateOf(if (hh.monthlyIncome > 0) hh.monthlyIncome.toLong().toString() else "") }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -927,6 +928,16 @@ fun EditHouseholdSheet(vm: BudgetViewModel, onDone: () -> Unit) {
         )
         Spacer(Modifier.height(16.dp))
 
+        // Age field
+        LabeledField(
+            label = "Your age",
+            value = ageText,
+            onValueChange = { ageText = it.filter { c -> c.isDigit() }.take(3) },
+            placeholder = "e.g. 30",
+            keyboardType = KeyboardType.Number,
+        )
+        Spacer(Modifier.height(16.dp))
+
         // Income field
         LabeledField(
             label = "Monthly take-home income",
@@ -945,6 +956,7 @@ fun EditHouseholdSheet(vm: BudgetViewModel, onDone: () -> Unit) {
                     childCount = childCount,
                     petCount = petCount,
                     monthlyIncome = incomeText.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: hh.monthlyIncome,
+                    userAge = ageText.filter { it.isDigit() }.toIntOrNull() ?: hh.userAge,
                 )
             )
             onDone()

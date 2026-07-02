@@ -573,6 +573,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
                 childCount = profile.childCount,
                 petCount = profile.petCount,
                 monthlyIncome = if (profile.monthlyIncome > 0) profile.monthlyIncome else d.household.monthlyIncome,
+                userAge = if (profile.userAge > 0) profile.userAge else d.household.userAge,
             )
             val extraCats = autoCreateDependentCategories(d, hh)
             d.copy(household = hh, categories = d.categories + extraCats, onboarded = true)
@@ -591,6 +592,7 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
                 childCount = profile.childCount,
                 petCount = profile.petCount,
                 monthlyIncome = if (profile.monthlyIncome > 0) profile.monthlyIncome else d.household.monthlyIncome,
+                userAge = if (profile.userAge > 0) profile.userAge else d.household.userAge,
             )
             val extraCats = autoCreateDependentCategories(d, hh)
             d.copy(household = hh, categories = d.categories + extraCats)
@@ -982,6 +984,72 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
             n >= 1_000_000 -> String.format("%.1fM", n / 1_000_000)
             n >= 1_000 -> String.format("%.0f", n)
             else -> String.format("%.0f", n)
+        }
+    }
+
+    // --- Retirement Milestones -----------------------------------------------
+
+    /**
+     * A retirement milestone based on age and income, using Fidelity's savings
+     * benchmarks: save 1x annual income by 30, 3x by 40, 6x by 50, 8x by 60,
+     * and 10x by 67. Each milestone shows the target multiple, target age,
+     * whether it's been reached, and the years remaining.
+     */
+    data class RetirementMilestone(
+        val targetAge: Int,
+        val incomeMultiple: Double,
+        val targetAmount: Double,
+        val currentBalance: Double,
+        val isReached: Boolean,
+        val yearsAway: Int,
+        val status: String,
+    )
+
+    /**
+     * Computes personalized retirement milestones based on the user's age,
+     * annual income, and current retirement account balances. Uses Fidelity's
+     * age-based savings benchmarks.
+     */
+    fun retirementMilestones(data: BudgetData = _data.value): List<RetirementMilestone> {
+        val age = data.household.userAge
+        if (age <= 0) return emptyList()
+
+        val monthlyIncome = incomeThisMonth(data).let { if (it > 0) it else data.household.monthlyIncome }
+        if (monthlyIncome <= 0) return emptyList()
+
+        val annualIncome = monthlyIncome * 12.0
+        val retirementBalance = data.accounts
+            .filter { it.type == AccountType.RETIREMENT }
+            .sumOf { it.balance }
+
+        // Fidelity benchmarks: (age -> income multiple)
+        val benchmarks = listOf(
+            30 to 1.0,
+            40 to 3.0,
+            50 to 6.0,
+            60 to 8.0,
+            67 to 10.0,
+        )
+
+        return benchmarks.map { (targetAge, multiple) ->
+            val targetAmount = annualIncome * multiple
+            val isReached = retirementBalance >= targetAmount
+            val yearsAway = targetAge - age
+            val status = when {
+                isReached -> "Reached"
+                yearsAway <= 0 -> "Behind target"
+                yearsAway <= 5 -> "Coming up soon"
+                else -> "On track"
+            }
+            RetirementMilestone(
+                targetAge = targetAge,
+                incomeMultiple = multiple,
+                targetAmount = targetAmount,
+                currentBalance = retirementBalance,
+                isReached = isReached,
+                yearsAway = yearsAway,
+                status = status,
+            )
         }
     }
 

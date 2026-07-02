@@ -126,6 +126,8 @@ data class HouseholdProfile(
     val childCount: Int = 0,
     val petCount: Int = 0,
     val monthlyIncome: Double = 0.0,
+    /** Age of the primary user — used for retirement milestone suggestions. 0 = not set. */
+    val userAge: Int = 0,
 ) {
     val totalPeople: Int get() = adultCount + childCount
     val hasDependents: Boolean get() = childCount > 0 || petCount > 0

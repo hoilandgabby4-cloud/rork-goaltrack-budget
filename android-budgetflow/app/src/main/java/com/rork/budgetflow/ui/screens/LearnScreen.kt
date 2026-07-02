@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement as ComposeArrangement
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -242,6 +244,25 @@ fun LearnScreen(
                     Spacer(Modifier.height(10.dp))
                 }
             }
+        }
+
+        // --- Retirement Milestones ---
+        val milestones = remember(data) { vm.retirementMilestones() }
+        if (milestones.isNotEmpty()) {
+            SectionHeading(
+                title = "Retirement milestones",
+                subtitle = "Savings targets based on your age & income",
+                icon = Icons.Rounded.Cake,
+                color = Violet,
+            )
+            Spacer(Modifier.height(12.dp))
+
+            RetirementMilestonesSection(
+                milestones = milestones,
+                userAge = data.household.userAge,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(24.dp))
         }
 
         // --- App Help / Usage Guide ---
@@ -689,6 +710,169 @@ private fun AppHelpSection() {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RetirementMilestonesSection(
+    milestones: List<com.rork.budgetflow.ui.BudgetViewModel.RetirementMilestone>,
+    userAge: Int,
+    modifier: Modifier = Modifier,
+) {
+    val retirementBalance = milestones.firstOrNull()?.currentBalance ?: 0.0
+    val maxTarget = milestones.lastOrNull()?.targetAmount ?: 0.0
+    val overallProgress = if (maxTarget > 0) {
+        (retirementBalance / maxTarget).toFloat().coerceIn(0f, 1f)
+    } else 0f
+
+    GlassCard(modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.padding(18.dp)) {
+            // Header with user's current age
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Violet.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Cake,
+                        contentDescription = null,
+                        tint = Violet,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "At age $userAge",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        "Fidelity savings benchmarks",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextTertiary,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        com.rork.budgetflow.data.Money.formatCompact(retirementBalance),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (retirementBalance > 0) Mint else TextTertiary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "saved",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextTertiary,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Overall progress bar
+            androidx.compose.material3.Text(
+                text = if (retirementBalance > 0) {
+                    "${(overallProgress * 100).toInt()}% toward your age-67 goal"
+                } else {
+                    "Start a retirement account to begin tracking progress"
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = TextSecondary,
+            )
+            Spacer(Modifier.height(6.dp))
+            com.rork.budgetflow.ui.components.ProgressBar(
+                progress = overallProgress,
+                color = Violet,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(Modifier.height(18.dp))
+
+            // Milestone timeline
+            milestones.forEachIndexed { index, milestone ->
+                val milestoneColor = when {
+                    milestone.isReached -> Mint
+                    milestone.yearsAway <= 0 -> Coral
+                    milestone.yearsAway <= 5 -> Gold
+                    else -> Violet
+                }
+                val progress = if (milestone.targetAmount > 0) {
+                    (milestone.currentBalance / milestone.targetAmount).toFloat().coerceIn(0f, 1f)
+                } else 0f
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    // Age circle
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(milestoneColor.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "${milestone.targetAge}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = milestoneColor,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    // Milestone details
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${milestone.incomeMultiple.toInt()}x income",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(milestoneColor.copy(alpha = 0.12f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                            ) {
+                                Text(
+                                    milestone.status,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = milestoneColor,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "Target: ${com.rork.budgetflow.data.Money.formatCompact(milestone.targetAmount)}" +
+                                if (milestone.yearsAway > 0) "  •  ${milestone.yearsAway}y away" else "",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextTertiary,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        com.rork.budgetflow.ui.components.ProgressBar(
+                            progress = progress,
+                            color = milestoneColor,
+                            modifier = Modifier.fillMaxWidth(),
+                            height = 6.dp,
+                        )
+                    }
+                }
+
+                if (index < milestones.lastIndex) {
+                    Spacer(Modifier.height(14.dp))
                 }
             }
         }

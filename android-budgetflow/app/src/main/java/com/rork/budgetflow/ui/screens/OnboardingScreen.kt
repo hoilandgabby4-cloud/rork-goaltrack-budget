@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Pets
 import androidx.compose.material.icons.rounded.Remove
@@ -66,8 +67,9 @@ private const val STEP_WELCOME = 0
 private const val STEP_ADULTS = 1
 private const val STEP_CHILDREN = 2
 private const val STEP_PETS = 3
-private const val STEP_INCOME = 4
-private const val STEP_DONE = 5
+private const val STEP_AGE = 4
+private const val STEP_INCOME = 5
+private const val STEP_DONE = 6
 
 @Composable
 fun OnboardingScreen(onComplete: (HouseholdProfile) -> Unit) {
@@ -75,6 +77,7 @@ fun OnboardingScreen(onComplete: (HouseholdProfile) -> Unit) {
     var adultCount by remember { mutableIntStateOf(1) }
     var childCount by remember { mutableIntStateOf(0) }
     var petCount by remember { mutableIntStateOf(0) }
+    var ageText by remember { mutableStateOf("") }
     var incomeText by remember { mutableStateOf("") }
 
     val direction = remember(step) { if (step > 0) 1 else -1 }
@@ -100,8 +103,8 @@ fun OnboardingScreen(onComplete: (HouseholdProfile) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(bottom = 36.dp),
             ) {
-                for (i in 1..5) {
-                    val filled = i <= step.coerceIn(1, 5)
+                for (i in 1..6) {
+                    val filled = i <= step.coerceIn(1, 6)
                     Box(
                         modifier = Modifier
                             .size(if (filled) 24.dp else 8.dp)
@@ -159,20 +162,27 @@ fun OnboardingScreen(onComplete: (HouseholdProfile) -> Unit) {
                         min = 0,
                         max = 15,
                         label = { if (it == 0) "None" else "$it pet${if (it != 1) "s" else ""}" },
-                        onNext = { step = STEP_INCOME },
+                        onNext = { step = STEP_AGE },
                         onBack = { step = STEP_CHILDREN },
+                    )
+                    STEP_AGE -> AgeStep(
+                        age = ageText,
+                        onAgeChange = { ageText = it },
+                        onNext = { step = STEP_INCOME },
+                        onBack = { step = STEP_PETS },
                     )
                     STEP_INCOME -> IncomeStep(
                         income = incomeText,
                         onIncomeChange = { incomeText = it },
                         onNext = { step = STEP_DONE },
-                        onBack = { step = STEP_PETS },
+                        onBack = { step = STEP_AGE },
                     )
                     STEP_DONE -> SummaryStep(
                         adultCount = adultCount,
                         childCount = childCount,
                         petCount = petCount,
                         totalPeople = adultCount + childCount,
+                        age = ageText.filter { it.isDigit() }.toIntOrNull() ?: 0,
                         income = incomeText.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0,
                         onFinish = {
                             onComplete(
@@ -182,6 +192,7 @@ fun OnboardingScreen(onComplete: (HouseholdProfile) -> Unit) {
                                     petCount = petCount,
                                     monthlyIncome = incomeText.filter { it.isDigit() || it == '.' }.toDoubleOrNull()
                                         ?: 0.0,
+                                    userAge = ageText.filter { it.isDigit() }.toIntOrNull() ?: 0,
                                 )
                             )
                         },
@@ -433,11 +444,92 @@ private fun IncomeStep(
 }
 
 @Composable
+private fun AgeStep(
+    age: String,
+    onAgeChange: (String) -> Unit,
+    onNext: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Spacer(Modifier.weight(0.3f))
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(Mint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.Cake,
+                null,
+                tint = Mint,
+                modifier = Modifier.size(44.dp),
+            )
+        }
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "Your age",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "This helps us suggest retirement milestones and timelines tailored to where you are in life.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        Spacer(Modifier.height(36.dp))
+
+        OutlinedTextField(
+            value = age,
+            onValueChange = { onAgeChange(it.filter { c -> c.isDigit() }.take(3)) },
+            placeholder = {
+                Text("30", color = TextTertiary)
+            },
+            textStyle = MaterialTheme.typography.headlineMedium.copy(
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold,
+            ),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Mint,
+                unfocusedBorderColor = InkSurface,
+                cursorColor = Mint,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(Modifier.weight(0.4f))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            TextButton(
+                icon = Icons.Rounded.ArrowBack,
+                label = "Back",
+                onClick = onBack,
+            )
+            PrimaryButton("Next") { onNext() }
+        }
+    }
+}
+
+@Composable
 private fun SummaryStep(
     adultCount: Int,
     childCount: Int,
     petCount: Int,
     totalPeople: Int,
+    age: Int,
     income: Double,
     onFinish: () -> Unit,
     onBack: () -> Unit,
@@ -485,6 +577,33 @@ private fun SummaryStep(
         SummaryCard(childCount.toString(), "Child${if (childCount != 1) "ren" else ""}", Modifier.weight(1f))
         Spacer(Modifier.width(12.dp))
         SummaryCard(petCount.toString(), "Pet${if (petCount != 1) "s" else ""}", Modifier.weight(1f))
+
+        if (age > 0) {
+            Spacer(Modifier.height(24.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(InkElevated)
+                    .padding(20.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Your age",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = TextSecondary,
+                        )
+                        Text(
+                            "$age years old",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Mint,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
 
         if (income > 0) {
             Spacer(Modifier.height(24.dp))
