@@ -45,7 +45,7 @@ import com.rork.budgetflow.ui.components.IconChip
 import com.rork.budgetflow.ui.components.ProgressBar
 import com.rork.budgetflow.ui.components.SectionHeader
 import com.rork.budgetflow.ui.components.androidClick
-import com.rork.budgetflow.data.Category
+
 import com.rork.budgetflow.ui.theme.Coral
 import com.rork.budgetflow.ui.theme.Hairline
 import com.rork.budgetflow.ui.theme.Ink
@@ -58,8 +58,6 @@ import com.rork.budgetflow.ui.theme.TextTertiary
 fun AccountsScreen(
     vm: BudgetViewModel,
     onAddAccount: () -> Unit,
-    onAddCategory: () -> Unit,
-    onEditCategory: (Category) -> Unit,
 ) {
     val data by vm.data.collectAsStateWithLifecycle()
 
@@ -88,46 +86,7 @@ fun AccountsScreen(
         items(data.accounts, key = { it.id }) { acc ->
             AccountCard(acc, onLongDelete = { vm.deleteAccount(acc.id) })
         }
-        item {
-            SectionHeader(
-                title = "Spending categories",
-                modifier = Modifier.padding(top = 8.dp),
-                action = { AddPill(onAddCategory) },
-            )
-        }
-        items(data.categories, key = { it.id }) { cat ->
-            val used = vm.spentInCategory(cat.id)
-            CategoryCard(
-                name = cat.name,
-                iconKey = cat.iconKey,
-                color = cat.colorArgb.toColor(),
-                used = used,
-                budget = cat.monthlyBudget,
-                suggestedPct = cat.suggestedPercentage,
-                onEdit = { onEditCategory(cat) },
-                onLongDelete = { vm.deleteCategory(cat.id) },
-            )
-        }
 
-        val budgetCats = data.categories.filter { it.monthlyBudget > 0 }
-        if (budgetCats.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = "Budgets",
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            items(budgetCats, key = { it.id }) { cat ->
-                val used = vm.spentInCategory(cat.id)
-                BudgetCard(
-                    name = cat.name,
-                    iconKey = cat.iconKey,
-                    color = cat.colorArgb.toColor(),
-                    used = used,
-                    budget = cat.monthlyBudget,
-                )
-            }
-        }
     }
 }
 
