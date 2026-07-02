@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Edit
@@ -103,7 +104,8 @@ fun DashboardScreen(
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val remaining = income - spent
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FlowStat(
                     label = "Income",
                     value = Money.format(income),
@@ -116,6 +118,14 @@ fun DashboardScreen(
                     value = Money.format(spent),
                     tint = Coral,
                     up = false,
+                    modifier = Modifier.weight(1f),
+                )
+                FlowStat(
+                    label = "Remaining",
+                    value = Money.format(remaining),
+                    tint = if (remaining >= 0) Gold else Coral,
+                    up = remaining >= 0,
+                    icon = Icons.Rounded.AccountBalanceWallet,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -357,12 +367,14 @@ private fun FlowStat(
     tint: Color,
     up: Boolean,
     modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector =
+        if (up) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward,
 ) {
     GlassCard(modifier = modifier, cornerRadius = 22.dp) {
-        Column(Modifier.padding(18.dp)) {
+        Column(Modifier.padding(16.dp)) {
             IconChip(color = tint, size = 38.dp) {
                 Icon(
-                    if (up) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward,
+                    icon,
                     contentDescription = null,
                     tint = tint,
                     modifier = Modifier.size(20.dp),
