@@ -38,6 +38,10 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
     private val _data = MutableStateFlow(repo.load())
     val data: StateFlow<BudgetData> = _data.asStateFlow()
 
+    init {
+        autoCreateRecurringTransactions()
+    }
+
     private fun update(transform: (BudgetData) -> BudgetData) {
         val next = transform(_data.value)
         _data.value = next
@@ -97,16 +101,19 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         accountId: String,
         categoryId: String?,
         isIncome: Boolean,
+        recurringEventId: String? = null,
+        txId: String? = null,
     ) {
         if (amount <= 0.0) return
         val tx = Transaction(
-            id = uuid(),
+            id = txId ?: uuid(),
             title = title.trim().ifBlank { if (isIncome) "Income" else "Expense" },
             amount = amount,
             accountId = accountId,
             categoryId = if (isIncome) null else categoryId,
             isIncome = isIncome,
             timestamp = System.currentTimeMillis(),
+            recurringEventId = recurringEventId,
         )
         update { d ->
             val accounts = d.accounts.map { acc ->
@@ -136,7 +143,15 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
                 val delta = -applyDelta(acc.type, tx.amount, tx.isIncome)
                 acc.copy(balance = acc.balance + delta)
             }
-            d.copy(accounts = accounts, transactions = d.transactions.filterNot { it.id == id })
+            // If this transaction was linked to a recurring calendar event, delete it too
+            val calendarEvents = if (tx.recurringEventId != null) {
+                d.calendarEvents.filterNot { it.id == tx.recurringEventId }
+            } else d.calendarEvents
+            d.copy(
+                accounts = accounts,
+                transactions = d.transactions.filterNot { it.id == id },
+                calendarEvents = calendarEvents,
+            )
         }
     }
 
@@ -208,11 +223,12 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
         categoryId: String?,
         colorArgb: Long,
         notes: String,
+        id: String? = null,
     ) {
         update { d ->
             d.copy(
                 calendarEvents = d.calendarEvents + com.rork.budgetflow.data.CalendarEvent(
-                    id = uuid(),
+                    id = id ?: uuid(),
                     title = title.trim().ifBlank { type.label },
                     type = type,
                     dayOfMonth = dayOfMonth,
@@ -265,6 +281,65 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
      * Recurring bills appear on every [dayOfMonth]. Vacations appear if they
      * overlap the month in any way.
      */
+    /**
+     * Auto-creates expense transactions for recurring bill calendar events
+     * that haven't had a transaction recorded in the current month yet.
+     * Called once when the ViewModel is first created.
+     */
+    fun autoCreateRecurringTransactions() {
+        val d = _data.value
+        val cal = java.util.Calendar.getInstance()
+        val currentYear = cal.get(java.util.Calendar.YEAR)
+        val currentMonth = cal.get(java.util.Calendar.MONTH)
+        val monthStart = java.util.Calendar.getInstance().apply {
+            set(currentYear, currentMonth, 1, 0, 0, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        var changed = false
+        var updated = d
+        for (event in d.calendarEvents) {
+            if (event.type != com.rork.budgetflow.data.CalendarEventType.BILL) continue
+            if (event.amount <= 0) continue
+
+            // Check if we already created a transaction for this event this month
+            val alreadyCreated = d.transactions.any { tx ->
+                tx.recurringEventId == event.id && tx.timestamp >= monthStart
+            }
+            if (alreadyCreated) continue
+
+            // Find a suitable account (first checking/savings account)
+            val account = d.accounts.firstOrNull {
+                it.type == AccountType.CHECKING || it.type == AccountType.SAVINGS
+            } ?: d.accounts.firstOrNull() ?: continue
+
+            val tx = Transaction(
+                id = uuid(),
+                title = event.title,
+                amount = event.amount,
+                accountId = account.id,
+                categoryId = event.categoryId,
+                isIncome = false,
+                timestamp = monthStart,
+                recurringEventId = event.id,
+            )
+            val newAccounts = updated.accounts.map { acc ->
+                if (acc.id != account.id) return@map acc
+                val delta = applyDelta(acc.type, event.amount, false)
+                acc.copy(balance = acc.balance + delta)
+            }
+            updated = updated.copy(
+                accounts = newAccounts,
+                transactions = listOf(tx) + updated.transactions,
+            )
+            changed = true
+        }
+        if (changed) {
+            _data.value = updated
+            repo.save(updated)
+        }
+    }
+
     fun eventsForMonth(year: Int, month: Int): List<com.rork.budgetflow.data.CalendarEvent> {
         val cal = java.util.Calendar.getInstance()
         return _data.value.calendarEvents.filter { event ->

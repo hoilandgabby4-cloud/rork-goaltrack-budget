@@ -58,6 +58,8 @@ data class Transaction(
     val categoryId: String?,
     val isIncome: Boolean,
     val timestamp: Long,
+    /** Links this transaction to a recurring calendar event so deleting the transaction also deletes the recurring bill. */
+    val recurringEventId: String? = null,
 )
 
 @Serializable

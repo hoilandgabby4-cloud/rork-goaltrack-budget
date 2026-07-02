@@ -191,14 +191,17 @@ fun AddTransactionSheet(vm: BudgetViewModel, onDone: () -> Unit) {
         Spacer(Modifier.height(24.dp))
         val valid = parseAmount(amount) > 0 && accountId != null
         PrimaryButton(label = if (isIncome) "Add income" else "Add expense", enabled = valid) {
+            // Pre-generate the event ID so we can link the transaction to the recurring bill
+            val eventId = if (addToCalendar && isBillCategory && !isIncome) java.util.UUID.randomUUID().toString() else null
             vm.addTransaction(
                 title = title,
                 amount = parseAmount(amount),
                 accountId = accountId!!,
                 categoryId = categoryId,
                 isIncome = isIncome,
+                recurringEventId = eventId,
             )
-            if (addToCalendar && isBillCategory && !isIncome) {
+            if (addToCalendar && isBillCategory && !isIncome && eventId != null) {
                 val dayNum = billDayOfMonth.toIntOrNull()?.coerceIn(1, 31) ?: Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
                 val c = Calendar.getInstance().apply {
                     set(Calendar.DAY_OF_MONTH, dayNum.coerceIn(1, 28))
@@ -208,6 +211,7 @@ fun AddTransactionSheet(vm: BudgetViewModel, onDone: () -> Unit) {
                     set(Calendar.MILLISECOND, 0)
                 }
                 vm.addCalendarEvent(
+                    id = eventId,
                     title = title.ifBlank { selectedCategory?.name ?: "Bill" },
                     type = com.rork.budgetflow.data.CalendarEventType.BILL,
                     dayOfMonth = dayNum,
