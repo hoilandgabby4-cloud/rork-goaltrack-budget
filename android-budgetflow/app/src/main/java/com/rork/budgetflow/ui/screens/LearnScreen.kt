@@ -22,20 +22,25 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Cake
+import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Forest
 import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.SwapVert
+import androidx.compose.material.icons.rounded.TheaterComedy
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Warning
@@ -406,6 +411,19 @@ fun LearnScreen(
                     "Most impulse purchases lose their appeal after a cooling-off period. The money you save can go toward your real goals — emergency fund, retirement, or that vacation you actually want.\n\n" +
                     "For purchases over \\$500, extend this to a 90-day rule and research alternatives during that time."
         )
+        Spacer(Modifier.height(20.dp))
+
+        // --- Free & Low-Cost Activities ---
+        SectionHeading(
+            title = "Free & low-cost activities",
+            subtitle = "Have fun without breaking the budget",
+            icon = Icons.Rounded.Palette,
+            color = Coral,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        FreeActivitiesSection()
+
         Spacer(Modifier.height(20.dp))
 
         // Bottom spacing
@@ -873,6 +891,224 @@ private fun RetirementMilestonesSection(
 
                 if (index < milestones.lastIndex) {
                     Spacer(Modifier.height(14.dp))
+                }
+            }
+        }
+    }
+}
+
+private data class ActivityGroup(
+    val icon: ImageVector,
+    val title: String,
+    val costLabel: String,
+    val accentColor: Color,
+    val activities: List<String>,
+)
+
+@Composable
+private fun FreeActivitiesSection() {
+    val groups = remember {
+        listOf(
+            ActivityGroup(
+                icon = Icons.Rounded.Forest,
+                title = "Outdoors & nature",
+                costLabel = "FREE",
+                accentColor = Mint,
+                activities = listOf(
+                    "Hiking local trails and nature preserves — most are free and open year-round",
+                    "Visiting state and national parks (many are free; some charge a small day-use fee)",
+                    "Walking or biking in your neighborhood — great exercise and costs nothing",
+                    "Geocaching — a free real-world treasure hunt using your phone's GPS",
+                    "Birdwatching at local wetlands, lakes, or parks — download a free app like Merlin to identify species",
+                    "Stargazing on a clear night — find a dark spot away from city lights",
+                    "Gardening — start with seeds or cuttings from a neighbor; grow herbs on a windowsill",
+                    "Swimming at public beaches, lakes, or community pools (low-cost day passes)",
+                ),
+            ),
+            ActivityGroup(
+                icon = Icons.Rounded.ChildCare,
+                title = "With kids",
+                costLabel = "FREE",
+                accentColor = Sky,
+                activities = listOf(
+                    "Taking kids to the playground or park — pack snacks and make a day of it",
+                    "Library visits — borrow books, movies, audiobooks, and attend free story-time events",
+                    "Building forts, obstacle courses, or cardboard-box creations at home",
+                    "Free museum days — many museums offer free admission weekly or monthly",
+                    "Craft projects using recycled materials, paper, and things you already have",
+                    "Backyard camping or indoor blanket-tent sleepovers",
+                    "Scavenger hunts around the house, yard, or neighborhood",
+                    "Baking or cooking together with pantry ingredients",
+                    "Community events — farmers markets, parades, outdoor concerts, and festivals",
+                ),
+            ),
+            ActivityGroup(
+                icon = Icons.Rounded.Movie,
+                title = "Entertainment at home",
+                costLabel = "FREE – $$",
+                accentColor = Violet,
+                activities = listOf(
+                    "Movie nights — borrow DVDs free from the library or use a streaming service you already pay for",
+                    "Board game or card game nights — dust off games you own or borrow from friends",
+                    "Hosting a potluck dinner — everyone brings a dish, you provide the space",
+                    "Reading — libraries are free and most offer digital e-books and audiobooks too",
+                    "Learning a new skill on YouTube — drawing, cooking, guitar, origami, you name it",
+                    "Podcast listening — thousands of free shows on every topic imaginable",
+                    "Home workout videos — yoga, HIIT, dance — all free on YouTube",
+                    "Starting a journal, writing stories, or learning to draw",
+                ),
+            ),
+            ActivityGroup(
+                icon = Icons.Rounded.TheaterComedy,
+                title = "Out & about",
+                costLabel = "FREE – $$",
+                accentColor = Gold,
+                activities = listOf(
+                    "Free outdoor concerts and movies in the park — check your city's event calendar",
+                    "First Friday / art walk gallery nights — many cities host free monthly art walks",
+                    "Community theater and school performances — often free or donation-based",
+                    "Free workshops at libraries, hardware stores, and community centers",
+                    "Volunteering — meet people, give back, and feel great (animal shelters, food banks, habitat builds)",
+                    "Farmers markets — free to browse, and you can buy affordable fresh produce",
+                    "Exploring a new neighborhood or downtown area on foot",
+                    "Free admission days at zoos, aquariums, and botanical gardens",
+                ),
+            ),
+            ActivityGroup(
+                icon = Icons.Rounded.SelfImprovement,
+                title = "Health & wellness",
+                costLabel = "FREE",
+                accentColor = Coral,
+                activities = listOf(
+                    "Meditation and breathing exercises — free apps like Insight Timer or YouTube guided sessions",
+                    "Home yoga or stretching routines — no gym membership needed",
+                    "Running, walking, or jogging — just lace up your shoes",
+                    "Meal-prepping and cooking at home — save money and eat healthier",
+                    "Decluttering your home — therapeutic and you can sell items for extra cash",
+                    "Free online courses — Coursera, Khan Academy, and edX offer thousands of free classes",
+                ),
+            ),
+        )
+    }
+
+    var expandedIndex by remember { mutableStateOf<Int?>(0) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Intro card
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    "Fun doesn't have to be expensive.",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = TextPrimary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "The average household spends over \$3,000/year on entertainment. Cutting just a third of that and redirecting it to savings can add up to an extra \$1,000+ a year toward your goals. Tap each category to explore ideas.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary,
+                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.4f,
+                )
+            }
+        }
+
+        groups.forEachIndexed { index, group ->
+            val isExpanded = expandedIndex == index
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        if (isExpanded) group.accentColor.copy(alpha = 0.08f) else InkElevated
+                    )
+                    .animateContentSize()
+                    .clickable { expandedIndex = if (isExpanded) null else index },
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(group.accentColor.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                group.icon,
+                                contentDescription = null,
+                                tint = group.accentColor,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            group.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(group.accentColor.copy(alpha = 0.12f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        ) {
+                            Text(
+                                group.costLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = group.accentColor,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            if (isExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            tint = TextTertiary,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+
+                    if (isExpanded) {
+                        Spacer(Modifier.height(14.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(group.accentColor.copy(alpha = 0.12f)),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        group.activities.forEachIndexed { activityIndex, activity ->
+                            Row(
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 7.dp)
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(group.accentColor.copy(alpha = 0.6f)),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    activity,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary,
+                                    lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.45f,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
