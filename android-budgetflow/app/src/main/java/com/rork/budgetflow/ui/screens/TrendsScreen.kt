@@ -49,6 +49,7 @@ import com.rork.budgetflow.ui.BudgetViewModel
 import com.rork.budgetflow.ui.components.GlassCard
 import com.rork.budgetflow.ui.components.IconChip
 import com.rork.budgetflow.ui.components.MonthlyBarChart
+import com.rork.budgetflow.ui.components.ProgressBar
 import com.rork.budgetflow.ui.components.SectionHeader
 import com.rork.budgetflow.ui.components.SpendingGuidelines
 import com.rork.budgetflow.ui.components.androidClick
@@ -238,85 +239,124 @@ private fun CategoryCard(
     val pct = if (monthlyIncome > 0) (spent / monthlyIncome * 100.0) else 0.0
     val isOverBudget = category.monthlyBudget > 0 && spent > category.monthlyBudget
 
+    // Progress: fraction of monthly budget spent (or of suggested income share if no budget set)
+    val budgetTarget = if (category.monthlyBudget > 0) {
+        category.monthlyBudget
+    } else if (category.suggestedPercentage > 0 && monthlyIncome > 0) {
+        monthlyIncome * category.suggestedPercentage / 100.0
+    } else {
+        0.0
+    }
+    val progress = if (budgetTarget > 0) (spent / budgetTarget).coerceIn(0.0, 1.0).toFloat() else 0f
+    val barColor = if (isOverBudget) Coral else color
+
     GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 20.dp) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconChip(color = color, size = 42.dp) {
-                Icon(
-                    IconCatalog.icon(category.iconKey),
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconChip(color = color, size = 42.dp) {
+                    Icon(
+                        IconCatalog.icon(category.iconKey),
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
 
-            Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(14.dp))
 
-            Column(Modifier.weight(1f)) {
-                Text(
-                    category.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (category.suggestedPercentage > 0) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        category.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (category.suggestedPercentage > 0) {
+                            Text(
+                                "${category.suggestedPercentage.toInt()}% suggested",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextTertiary,
+                            )
+                            Text(
+                                " · ",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextTertiary,
+                            )
+                        }
                         Text(
-                            "${category.suggestedPercentage.toInt()}% suggested",
+                            if (spent > 0) "${Money.formatCompact(spent)} spent" else "No spending",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextTertiary,
-                        )
-                        Text(
-                            " · ",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextTertiary,
+                            color = if (isOverBudget) Coral else TextSecondary,
                         )
                     }
-                    Text(
-                        if (spent > 0) "${Money.formatCompact(spent)} spent" else "No spending",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isOverBudget) Coral else TextSecondary,
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = 0.12f))
+                        .androidClick(onEdit),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Edit,
+                        contentDescription = "Edit ${category.name}",
+                        tint = color,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Coral.copy(alpha = 0.12f))
+                        .androidClick(onDelete),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Delete,
+                        contentDescription = "Delete ${category.name}",
+                        tint = Coral,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.12f))
-                    .androidClick(onEdit),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Rounded.Edit,
-                    contentDescription = "Edit ${category.name}",
-                    tint = color,
-                    modifier = Modifier.size(16.dp),
+            // Progress bar
+            if (budgetTarget > 0) {
+                Spacer(Modifier.height(10.dp))
+                ProgressBar(
+                    progress = progress,
+                    color = barColor,
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 6.dp,
                 )
-            }
-
-            Spacer(Modifier.width(8.dp))
-
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Coral.copy(alpha = 0.12f))
-                    .androidClick(onDelete),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Rounded.Delete,
-                    contentDescription = "Delete ${category.name}",
-                    tint = Coral,
-                    modifier = Modifier.size(16.dp),
-                )
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        "${(progress * 100).toInt()}% of ${Money.formatCompact(budgetTarget)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isOverBudget) Coral.copy(alpha = 0.8f) else TextTertiary,
+                    )
+                    Text(
+                        if (isOverBudget) "Over by ${Money.formatCompact(spent - budgetTarget)}"
+                        else "${Money.formatCompact((budgetTarget - spent).coerceAtLeast(0.0))} left",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isOverBudget) Coral.copy(alpha = 0.8f) else Mint.copy(alpha = 0.8f),
+                    )
+                }
             }
         }
     }
@@ -674,8 +714,8 @@ private fun DayCell(
 
     Box(
         modifier = modifier
-            .padding(2.dp)
-            .clip(CircleShape)
+            .padding(1.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(
                 when {
                     isSelected -> Mint.copy(alpha = 0.3f)
@@ -684,10 +724,13 @@ private fun DayCell(
                 }
             )
             .androidClick(onClick)
-            .padding(vertical = 6.dp),
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+
+        ) {
             Text(
                 "$day",
                 style = MaterialTheme.typography.bodySmall,
@@ -698,26 +741,33 @@ private fun DayCell(
                 },
                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
             )
-            if (hasBill || hasVacation) {
-                Spacer(Modifier.height(2.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
-                    if (hasBill) {
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(Mint)
-                        )
-                    }
-                    if (hasVacation) {
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(Coral)
-                        )
+            // Reserve consistent space for event dots so all cells have the same height
+            Box(
+                modifier = Modifier
+                    .height(7.dp)
+                    .padding(top = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (hasBill || hasVacation) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        if (hasBill) {
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .clip(CircleShape)
+                                    .background(Mint)
+                            )
+                        }
+                        if (hasVacation) {
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .clip(CircleShape)
+                                    .background(Coral)
+                            )
+                        }
                     }
                 }
             }
