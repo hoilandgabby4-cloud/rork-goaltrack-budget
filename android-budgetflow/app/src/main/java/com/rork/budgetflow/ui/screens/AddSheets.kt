@@ -48,7 +48,6 @@ import com.rork.budgetflow.data.toLongArgb
 import java.util.Calendar
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rork.budgetflow.ui.BudgetViewModel
-import com.rork.budgetflow.ui.components.ConfirmDeleteButton
 import com.rork.budgetflow.ui.components.IconChip
 import com.rork.budgetflow.ui.components.LabeledField
 import com.rork.budgetflow.ui.components.PrimaryButton
@@ -282,24 +281,15 @@ private fun AccountChip(account: Account, selected: Boolean, onClick: () -> Unit
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AddAccountSheet(
-    vm: BudgetViewModel,
-    onDone: () -> Unit,
-    editAccount: Account? = null,
-) {
-    val isEdit = editAccount != null
-    var name by remember { mutableStateOf(editAccount?.name ?: "") }
-    var balance by remember { mutableStateOf(if (editAccount != null && editAccount.balance > 0) Money.formatNoComma(editAccount.balance) else "") }
-    var limit by remember { mutableStateOf(if (editAccount != null && editAccount.creditLimit > 0) Money.formatNoComma(editAccount.creditLimit) else "") }
-    var type by remember { mutableStateOf(editAccount?.type ?: AccountType.CHECKING) }
-    var colorIndex by remember {
-        mutableStateOf(
-            if (editAccount != null) AccentPalette.indexOfFirst { it.toLongArgb() == editAccount.colorArgb }.coerceAtLeast(0) else 0
-        )
-    }
+fun AddAccountSheet(vm: BudgetViewModel, onDone: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var balance by remember { mutableStateOf("") }
+    var limit by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(AccountType.CHECKING) }
+    var colorIndex by remember { mutableStateOf(0) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        SheetTitle(if (isEdit) "Edit account" else "New account")
+        SheetTitle("New account")
         LabeledField("Name", name, { name = it }, placeholder = "e.g. Chase Checking")
         Spacer(Modifier.height(16.dp))
         FieldLabel("Type")
@@ -332,33 +322,15 @@ fun AddAccountSheet(
         FieldLabel("Color")
         ColorRow(colorIndex) { colorIndex = it }
         Spacer(Modifier.height(24.dp))
-        PrimaryButton(if (isEdit) "Save changes" else "Create account", enabled = name.isNotBlank()) {
-            if (isEdit) {
-                vm.updateAccount(
-                    id = editAccount!!.id,
-                    name = name,
-                    type = type,
-                    balance = parseAmount(balance),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                    creditLimit = parseAmount(limit),
-                )
-            } else {
-                vm.addAccount(
-                    name = name,
-                    type = type,
-                    balance = parseAmount(balance),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                    creditLimit = parseAmount(limit),
-                )
-            }
+        PrimaryButton("Create account", enabled = name.isNotBlank()) {
+            vm.addAccount(
+                name = name,
+                type = type,
+                balance = parseAmount(balance),
+                colorArgb = AccentPalette[colorIndex].toLongArgb(),
+                creditLimit = parseAmount(limit),
+            )
             onDone()
-        }
-        if (isEdit) {
-            Spacer(Modifier.height(12.dp))
-            ConfirmDeleteButton(onDelete = {
-                vm.deleteAccount(editAccount!!.id)
-                onDone()
-            })
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -443,23 +415,14 @@ fun AddCategorySheet(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AddGoalSheet(
-    vm: BudgetViewModel,
-    onDone: () -> Unit,
-    editGoal: com.rork.budgetflow.data.SavingsGoal? = null,
-) {
-    val isEdit = editGoal != null
-    var name by remember { mutableStateOf(editGoal?.name ?: "") }
-    var target by remember { mutableStateOf(if (editGoal != null && editGoal.target > 0) Money.formatNoComma(editGoal.target) else "") }
-    var colorIndex by remember {
-        mutableStateOf(
-            if (editGoal != null) AccentPalette.indexOfFirst { it.toLongArgb() == editGoal.colorArgb }.coerceAtLeast(0) else 0
-        )
-    }
-    var iconKey by remember { mutableStateOf(editGoal?.iconKey ?: "star") }
+fun AddGoalSheet(vm: BudgetViewModel, onDone: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var target by remember { mutableStateOf("") }
+    var colorIndex by remember { mutableStateOf(0) }
+    var iconKey by remember { mutableStateOf("star") }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        SheetTitle(if (isEdit) "Edit goal" else "New savings goal")
+        SheetTitle("New savings goal")
         LabeledField("Name", name, { name = it }, placeholder = "e.g. Vacation")
         Spacer(Modifier.height(16.dp))
         LabeledField(
@@ -477,31 +440,14 @@ fun AddGoalSheet(
         FieldLabel("Color")
         ColorRow(colorIndex) { colorIndex = it }
         Spacer(Modifier.height(24.dp))
-        PrimaryButton(if (isEdit) "Save changes" else "Create goal", enabled = name.isNotBlank() && parseAmount(target) > 0) {
-            if (isEdit) {
-                vm.updateGoal(
-                    id = editGoal!!.id,
-                    name = name,
-                    target = parseAmount(target),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                    iconKey = iconKey,
-                )
-            } else {
-                vm.addGoal(
-                    name = name,
-                    target = parseAmount(target),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                    iconKey = iconKey,
-                )
-            }
+        PrimaryButton("Create goal", enabled = name.isNotBlank() && parseAmount(target) > 0) {
+            vm.addGoal(
+                name = name,
+                target = parseAmount(target),
+                colorArgb = AccentPalette[colorIndex].toLongArgb(),
+                iconKey = iconKey,
+            )
             onDone()
-        }
-        if (isEdit) {
-            Spacer(Modifier.height(12.dp))
-            ConfirmDeleteButton(onDelete = {
-                vm.deleteGoal(editGoal!!.id)
-                onDone()
-            })
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -510,23 +456,14 @@ fun AddGoalSheet(
 // --- Debt --------------------------------------------------------------------
 
 @Composable
-fun AddDebtSheet(
-    vm: BudgetViewModel,
-    onDone: () -> Unit,
-    editDebt: com.rork.budgetflow.data.Debt? = null,
-) {
-    val isEdit = editDebt != null
-    var name by remember { mutableStateOf(editDebt?.name ?: "") }
-    var total by remember { mutableStateOf(if (editDebt != null && editDebt.total > 0) Money.formatNoComma(editDebt.total) else "") }
-    var apr by remember { mutableStateOf(if (editDebt != null && editDebt.apr > 0) Money.formatNoComma(editDebt.apr) else "") }
-    var colorIndex by remember {
-        mutableStateOf(
-            if (editDebt != null) AccentPalette.indexOfFirst { it.toLongArgb() == editDebt.colorArgb }.coerceAtLeast(0) else 3
-        )
-    }
+fun AddDebtSheet(vm: BudgetViewModel, onDone: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var total by remember { mutableStateOf("") }
+    var apr by remember { mutableStateOf("") }
+    var colorIndex by remember { mutableStateOf(3) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        SheetTitle(if (isEdit) "Edit debt" else "New debt")
+        SheetTitle("New debt")
         LabeledField("Name", name, { name = it }, placeholder = "e.g. Student Loan")
         Spacer(Modifier.height(16.dp))
         LabeledField(
@@ -549,31 +486,14 @@ fun AddDebtSheet(
         FieldLabel("Color")
         ColorRow(colorIndex) { colorIndex = it }
         Spacer(Modifier.height(24.dp))
-        PrimaryButton(if (isEdit) "Save changes" else "Add debt", enabled = name.isNotBlank() && parseAmount(total) > 0) {
-            if (isEdit) {
-                vm.updateDebt(
-                    id = editDebt!!.id,
-                    name = name,
-                    total = parseAmount(total),
-                    apr = parseAmount(apr),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                )
-            } else {
-                vm.addDebt(
-                    name = name,
-                    total = parseAmount(total),
-                    apr = parseAmount(apr),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                )
-            }
+        PrimaryButton("Add debt", enabled = name.isNotBlank() && parseAmount(total) > 0) {
+            vm.addDebt(
+                name = name,
+                total = parseAmount(total),
+                apr = parseAmount(apr),
+                colorArgb = AccentPalette[colorIndex].toLongArgb(),
+            )
             onDone()
-        }
-        if (isEdit) {
-            Spacer(Modifier.height(12.dp))
-            ConfirmDeleteButton(onDelete = {
-                vm.deleteDebt(editDebt!!.id)
-                onDone()
-            })
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -625,27 +545,18 @@ fun MoveMoneySheet(
 // --- Vehicle ----------------------------------------------------------------
 
 @Composable
-fun AddVehicleSheet(
-    vm: BudgetViewModel,
-    onDone: () -> Unit,
-    editVehicle: com.rork.budgetflow.data.Vehicle? = null,
-) {
-    val isEdit = editVehicle != null
-    var make by remember { mutableStateOf(editVehicle?.make ?: "") }
-    var model by remember { mutableStateOf(editVehicle?.model ?: "") }
+fun AddVehicleSheet(vm: BudgetViewModel, onDone: () -> Unit) {
+    var make by remember { mutableStateOf("") }
+    var model by remember { mutableStateOf("") }
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    var year by remember { mutableStateOf((editVehicle?.year ?: currentYear).toString()) }
-    var purchasePrice by remember { mutableStateOf(if (editVehicle != null && editVehicle.purchasePrice > 0) Money.formatNoComma(editVehicle.purchasePrice) else "") }
-    var useCustomValue by remember { mutableStateOf(editVehicle?.currentValue != null) }
-    var currentValue by remember { mutableStateOf(if (editVehicle?.currentValue != null && editVehicle.currentValue > 0) Money.formatNoComma(editVehicle.currentValue) else "") }
-    var colorIndex by remember {
-        mutableStateOf(
-            if (editVehicle != null) AccentPalette.indexOfFirst { it.toLongArgb() == editVehicle.colorArgb }.coerceAtLeast(0) else 6
-        )
-    }
+    var year by remember { mutableStateOf("$currentYear") }
+    var purchasePrice by remember { mutableStateOf("") }
+    var useCustomValue by remember { mutableStateOf(false) }
+    var currentValue by remember { mutableStateOf("") }
+    var colorIndex by remember { mutableStateOf(6) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        SheetTitle(if (isEdit) "Edit vehicle" else "Add vehicle")
+        SheetTitle("Add vehicle")
         LabeledField("Make", make, { make = it }, placeholder = "e.g. Toyota")
         Spacer(Modifier.height(16.dp))
         LabeledField("Model", model, { model = it }, placeholder = "e.g. Camry")
@@ -704,35 +615,16 @@ fun AddVehicleSheet(
         ColorRow(colorIndex) { colorIndex = it }
         Spacer(Modifier.height(24.dp))
         val valid = make.isNotBlank() && model.isNotBlank() && parseAmount(purchasePrice) > 0
-        PrimaryButton(if (isEdit) "Save changes" else "Add vehicle", enabled = valid) {
-            if (isEdit) {
-                vm.updateVehicle(
-                    id = editVehicle!!.id,
-                    make = make,
-                    model = model,
-                    year = year.toIntOrNull() ?: currentYear,
-                    purchasePrice = parseAmount(purchasePrice),
-                    currentValue = if (useCustomValue && parseAmount(currentValue) > 0) parseAmount(currentValue) else null,
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                )
-            } else {
-                vm.addVehicle(
-                    make = make,
-                    model = model,
-                    year = year.toIntOrNull() ?: currentYear,
-                    purchasePrice = parseAmount(purchasePrice),
-                    currentValue = if (useCustomValue && parseAmount(currentValue) > 0) parseAmount(currentValue) else null,
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                )
-            }
+        PrimaryButton("Add vehicle", enabled = valid) {
+            vm.addVehicle(
+                make = make,
+                model = model,
+                year = year.toIntOrNull() ?: currentYear,
+                purchasePrice = parseAmount(purchasePrice),
+                currentValue = if (useCustomValue && parseAmount(currentValue) > 0) parseAmount(currentValue) else null,
+                colorArgb = AccentPalette[colorIndex].toLongArgb(),
+            )
             onDone()
-        }
-        if (isEdit) {
-            Spacer(Modifier.height(12.dp))
-            ConfirmDeleteButton(onDelete = {
-                vm.deleteVehicle(editVehicle!!.id)
-                onDone()
-            })
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -741,23 +633,14 @@ fun AddVehicleSheet(
 // --- Buying Power -----------------------------------------------------------
 
 @Composable
-fun AddBuyingPowerSheet(
-    vm: BudgetViewModel,
-    onDone: () -> Unit,
-    editBuyingPower: com.rork.budgetflow.data.BuyingPower? = null,
-) {
-    val isEdit = editBuyingPower != null
-    var type by remember { mutableStateOf(editBuyingPower?.type ?: BuyingPowerType.CAR) }
-    var maxPurchase by remember { mutableStateOf(if (editBuyingPower != null && editBuyingPower.maxPurchase > 0) Money.formatNoComma(editBuyingPower.maxPurchase) else "") }
-    var monthlyPayment by remember { mutableStateOf(if (editBuyingPower != null && editBuyingPower.monthlyPayment > 0) Money.formatNoComma(editBuyingPower.monthlyPayment) else "") }
-    var colorIndex by remember {
-        mutableStateOf(
-            if (editBuyingPower != null) AccentPalette.indexOfFirst { it.toLongArgb() == editBuyingPower.colorArgb }.coerceAtLeast(0) else 3
-        )
-    }
+fun AddBuyingPowerSheet(vm: BudgetViewModel, onDone: () -> Unit) {
+    var type by remember { mutableStateOf(BuyingPowerType.CAR) }
+    var maxPurchase by remember { mutableStateOf("") }
+    var monthlyPayment by remember { mutableStateOf("") }
+    var colorIndex by remember { mutableStateOf(3) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-        SheetTitle(if (isEdit) "Edit buying power" else "Buying power")
+        SheetTitle("Buying power")
         FieldLabel("Type")
         Row(
             modifier = Modifier
@@ -792,31 +675,14 @@ fun AddBuyingPowerSheet(
         FieldLabel("Color")
         ColorRow(colorIndex) { colorIndex = it }
         Spacer(Modifier.height(24.dp))
-        PrimaryButton(if (isEdit) "Save changes" else "Save", enabled = parseAmount(maxPurchase) > 0) {
-            if (isEdit) {
-                vm.updateBuyingPower(
-                    id = editBuyingPower!!.id,
-                    type = type,
-                    maxPurchase = parseAmount(maxPurchase),
-                    monthlyPayment = parseAmount(monthlyPayment),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                )
-            } else {
-                vm.addBuyingPower(
-                    type = type,
-                    maxPurchase = parseAmount(maxPurchase),
-                    monthlyPayment = parseAmount(monthlyPayment),
-                    colorArgb = AccentPalette[colorIndex].toLongArgb(),
-                )
-            }
+        PrimaryButton("Save", enabled = parseAmount(maxPurchase) > 0) {
+            vm.addBuyingPower(
+                type = type,
+                maxPurchase = parseAmount(maxPurchase),
+                monthlyPayment = parseAmount(monthlyPayment),
+                colorArgb = AccentPalette[colorIndex].toLongArgb(),
+            )
             onDone()
-        }
-        if (isEdit) {
-            Spacer(Modifier.height(12.dp))
-            ConfirmDeleteButton(onDelete = {
-                vm.deleteBuyingPower(editBuyingPower!!.id)
-                onDone()
-            })
         }
         Spacer(Modifier.height(8.dp))
     }
