@@ -140,6 +140,20 @@ fun LearnScreen(
 
         Spacer(Modifier.height(8.dp))
 
+        // --- App Help / Usage Guide ---
+        SectionHeading(
+            title = "How to use Financial GPS",
+            subtitle = "A guided tour of every tab in the app",
+            icon = Icons.Rounded.HelpOutline,
+            color = Sky,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        // Expandable help cards
+        AppHelpSection()
+
+        Spacer(Modifier.height(24.dp))
+
         // --- Smart Recommendations ---
         val recs = remember(data) { vm.recommendations() }
         if (recs.isNotEmpty()) {
@@ -264,20 +278,6 @@ fun LearnScreen(
             )
             Spacer(Modifier.height(24.dp))
         }
-
-        // --- App Help / Usage Guide ---
-        SectionHeading(
-            title = "How to use Financial GPS",
-            subtitle = "A guided tour of every tab in the app",
-            icon = Icons.Rounded.HelpOutline,
-            color = Sky,
-        )
-        Spacer(Modifier.height(12.dp))
-
-        // Expandable help cards
-        AppHelpSection()
-
-        Spacer(Modifier.height(24.dp))
 
         // --- Budgeting Education ---
         SectionHeading(
